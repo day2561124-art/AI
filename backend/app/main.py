@@ -33,9 +33,17 @@ def find_knowledge_path() -> Path:
         for candidate in candidates:
             if candidate.exists():
                 return candidate.resolve()
-        return candidates[0].resolve()
 
-    txt_files = sorted(PROJECT_DIR.glob("*.txt"))
+    fallback_candidates = [
+        Path.cwd() / "knowledge_base.txt",
+        PROJECT_DIR / "knowledge_base.txt",
+        Path(__file__).resolve().parents[1] / "knowledge_base.txt",
+    ]
+    for candidate in fallback_candidates:
+        if candidate.exists():
+            return candidate.resolve()
+
+    txt_files = sorted({*PROJECT_DIR.glob("*.txt"), *Path.cwd().glob("*.txt")})
     if not txt_files:
         return PROJECT_DIR / "knowledge.txt"
     return txt_files[0]

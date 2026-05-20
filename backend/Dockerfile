@@ -14,7 +14,6 @@ COPY backend/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY backend /app
-COPY AI智慧應用產業人才培訓班_整合知識庫.txt /app/AI智慧應用產業人才培訓班_整合知識庫.txt
 
 EXPOSE 8000
 
