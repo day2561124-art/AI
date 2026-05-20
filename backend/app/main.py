@@ -22,9 +22,18 @@ def find_knowledge_path() -> Path:
     configured_path = os.getenv("KNOWLEDGE_BASE_PATH")
     if configured_path:
         path = Path(configured_path)
-        if not path.is_absolute():
-            path = PROJECT_DIR / path
-        return path.resolve()
+        if path.is_absolute():
+            return path.resolve()
+
+        candidates = [
+            PROJECT_DIR / path,
+            Path.cwd() / path,
+            Path(__file__).resolve().parents[1] / path,
+        ]
+        for candidate in candidates:
+            if candidate.exists():
+                return candidate.resolve()
+        return candidates[0].resolve()
 
     txt_files = sorted(PROJECT_DIR.glob("*.txt"))
     if not txt_files:
