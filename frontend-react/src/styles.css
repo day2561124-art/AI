@@ -14,8 +14,23 @@
 }
 
 body {
+  position: relative;
   margin: 0;
   min-width: 320px;
+}
+
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  background-image:
+    linear-gradient(rgba(15, 118, 110, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 118, 110, 0.045) 1px, transparent 1px),
+    linear-gradient(135deg, transparent 0 44%, rgba(15, 118, 110, 0.08) 44% 45%, transparent 45% 100%);
+  background-size: 40px 40px, 40px 40px, 220px 220px;
+  mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, 0.68) 48%, transparent 100%);
+  pointer-events: none;
 }
 
 button,
@@ -45,6 +60,16 @@ textarea {
   background: rgba(255, 255, 255, 0.86);
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
   backdrop-filter: blur(14px);
+}
+
+.site-header::after {
+  position: absolute;
+  right: 18px;
+  bottom: -1px;
+  left: 74px;
+  height: 2px;
+  content: "";
+  background: linear-gradient(90deg, #0f766e, rgba(20, 184, 166, 0.1), transparent);
 }
 
 .brand-mark {
@@ -95,7 +120,41 @@ textarea {
 }
 
 .intro {
+  position: relative;
+  overflow: hidden;
   margin: 0 0 26px;
+  padding: 28px 30px 30px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.72)),
+    linear-gradient(135deg, rgba(15, 118, 110, 0.08), rgba(14, 165, 233, 0.06));
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.07);
+}
+
+.intro::before,
+.intro::after {
+  position: absolute;
+  content: "";
+  pointer-events: none;
+}
+
+.intro::before {
+  top: 18px;
+  right: 22px;
+  width: 150px;
+  height: 82px;
+  border-top: 2px solid rgba(15, 118, 110, 0.24);
+  border-right: 2px solid rgba(15, 118, 110, 0.24);
+}
+
+.intro::after {
+  right: 34px;
+  bottom: 22px;
+  width: 190px;
+  height: 12px;
+  background:
+    repeating-linear-gradient(90deg, rgba(15, 118, 110, 0.20) 0 18px, transparent 18px 28px);
 }
 
 .eyebrow {
@@ -114,6 +173,7 @@ h1 {
 }
 
 .intro p:last-child {
+  position: relative;
   max-width: 780px;
   margin: 0;
   color: #4a5870;
@@ -125,10 +185,37 @@ h1 {
 .faq-list article,
 .timeline article,
 .admin-grid article {
+  position: relative;
+  overflow: hidden;
   border: 1px solid rgba(148, 163, 184, 0.30);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+}
+
+.chat-panel::before,
+.info-card::before,
+.faq-list article::before,
+.timeline article::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  content: "";
+  background: linear-gradient(90deg, #0f766e, #14b8a6, rgba(14, 165, 233, 0.3));
+}
+
+.info-card::after,
+.faq-list article::after,
+.timeline article::after {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  width: 56px;
+  height: 56px;
+  border-right: 1px solid rgba(15, 118, 110, 0.14);
+  border-bottom: 1px solid rgba(15, 118, 110, 0.14);
+  content: "";
+  pointer-events: none;
 }
 
 .chat-panel {
@@ -174,10 +261,21 @@ button:active {
 }
 
 .quick-actions button {
+  position: relative;
+  overflow: hidden;
   min-height: 40px;
   background: #e7f5f2;
   color: #095c57;
   box-shadow: none;
+}
+
+.quick-actions button::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  content: "";
+  background: #0f766e;
+  opacity: 0.68;
 }
 
 .quick-actions button:hover {
@@ -206,6 +304,11 @@ input {
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
+.chat-form button[type="submit"] {
+  background:
+    linear-gradient(90deg, #0f766e, #0b6f78);
+}
+
 textarea {
   resize: vertical;
   min-height: 136px;
@@ -219,9 +322,20 @@ input:focus {
 }
 
 .answer-box {
+  position: relative;
   margin-top: 24px;
   padding-top: 24px;
   border-top: 1px solid #dce4ee;
+}
+
+.answer-box::before {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 120px;
+  height: 2px;
+  content: "";
+  background: #0f766e;
 }
 
 .answer-box h2 {
@@ -282,11 +396,22 @@ input:focus {
 }
 
 .notice-band {
+  position: relative;
+  overflow: hidden;
   margin-top: 22px;
   border-left: 4px solid #0f766e;
   border-radius: 8px;
   background: #e7f5f2;
   padding: 15px 18px;
+}
+
+.notice-band::after {
+  position: absolute;
+  inset: auto 18px 14px auto;
+  width: 96px;
+  height: 8px;
+  content: "";
+  background: repeating-linear-gradient(90deg, rgba(15, 118, 110, 0.22) 0 14px, transparent 14px 22px);
 }
 
 .faq-list {
@@ -352,6 +477,16 @@ dd {
   .site-header {
     position: static;
     align-items: flex-start;
+  }
+
+  .site-header::after,
+  .intro::before,
+  .intro::after {
+    display: none;
+  }
+
+  .intro {
+    padding: 22px;
   }
 
   .top-nav {
