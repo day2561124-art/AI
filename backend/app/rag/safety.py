@@ -51,6 +51,10 @@ def classify_question(question: str) -> str:
         ("\u514d\u5b78\u8cbb", "subsidy"),
         ("\u734e\u52f5\u91d1", "subsidy"),
         ("\u6d25\u8cbc", "subsidy"),
+        ("\u4e2d\u9ad8\u9f61", "subsidy"),
+        ("45 \u6b72", "subsidy"),
+        ("45\u6b72", "subsidy"),
+        ("\u7279\u5b9a\u5c0d\u8c61", "subsidy"),
         ("8000", "subsidy"),
         ("8,000", "subsidy"),
         ("\u9818", "subsidy"),
@@ -172,6 +176,9 @@ def fact_answer(text: str, question: str, category: str) -> str | None:
     if category == "subsidy" and has_any(question, ["8000", "8,000", "\u734e\u52f5\u91d1"]):
         return "\u77e5\u8b58\u5eab\u63d0\u5230\uff0c15-29 \u6b72\u9752\u5e74\u7b26\u5408\u8cc7\u683c\u8005\u53ef\u7533\u8acb\u6bcf\u6708\u65b0\u81fa\u5e63 8,000 \u5143\u5b78\u7fd2\u734e\u52f5\u91d1\uff1b\u5be6\u969b\u8cc7\u683c\u8207\u6838\u5b9a\u4ecd\u4ee5\u5b98\u65b9\u5be9\u6838\u70ba\u6e96\u3002"
 
+    if category == "subsidy" and has_any(question, ["\u4e2d\u9ad8\u9f61", "45 \u6b72", "45\u6b72", "\u7279\u5b9a\u5c0d\u8c61"]):
+        return "\u4e2d\u9ad8\u9f61\u8005\u5c6c\u65bc\u53ef\u80fd\u9069\u7528\u8f03\u9ad8\u88dc\u52a9\u7684\u7279\u5b9a\u5c0d\u8c61\uff1b\u77e5\u8b58\u5eab\u63d0\u5230 45 \u6b72\u4ee5\u4e0a\u4e2d\u9ad8\u9f61\u8005\u53ef\u80fd\u88dc\u52a9 100%\uff0c\u5be6\u969b\u8cc7\u683c\u8207\u88dc\u52a9\u6bd4\u4f8b\u4ecd\u4ee5\u5b98\u65b9\u5be9\u6838\u70ba\u6e96\u3002"
+
     if category == "subsidy" and has_any(question, ["\u514d\u5b78\u8cbb", "\u5168\u984d", "\u88dc\u52a9"]):
         if "\u5168\u984d\u514d\u5b78\u8cbb" in text:
             return "\u7b2c 02 \u671f\u516c\u544a\u63d0\u5230\u7b26\u5408\u8cc7\u683c\u8005\u53ef\u5168\u984d\u514d\u5b78\u8cbb\uff1b\u5be6\u969b\u88dc\u52a9\u7d50\u679c\u4ecd\u4ee5\u5b98\u65b9\u5be9\u6838\u70ba\u6e96\u3002"
@@ -207,6 +214,19 @@ def direct_answer(question: str, category: str, matches: list[dict], fallback_te
 
 
 def build_answer(question: str, category: str, matches: list[dict], fallback_text: str = "") -> dict:
+    sources = unique_sources(matches, category) if matches else [CATEGORY_LABELS.get(category, category)]
+    direct = direct_answer(question, category, matches, fallback_text=fallback_text)
+    if direct:
+        return {
+            "answer": direct,
+            "category": category,
+            "category_label": CATEGORY_LABELS.get(category, category),
+            "sources": sources,
+            "notice": official_notice(category),
+            "matched": True,
+            "answer_style": "direct",
+        }
+
     if not matches:
         answer = (
             "\u7c21\u77ed\u56de\u7b54\uff1a\n"
@@ -223,20 +243,6 @@ def build_answer(question: str, category: str, matches: list[dict], fallback_tex
             "sources": [],
             "notice": official_notice(category),
             "matched": False,
-        }
-
-    sources = unique_sources(matches, category)
-    direct = direct_answer(question, category, matches, fallback_text=fallback_text)
-    if direct:
-        direct_sources = sources or [CATEGORY_LABELS.get(category, category)]
-        return {
-            "answer": direct,
-            "category": category,
-            "category_label": CATEGORY_LABELS.get(category, category),
-            "sources": direct_sources,
-            "notice": official_notice(category),
-            "matched": True,
-            "answer_style": "direct",
         }
 
     detail_items = [f"- {excerpt(match['content'], limit=180)}" for match in matches[:2]]

@@ -122,10 +122,23 @@ def chat(payload: ChatRequest) -> dict:
         keyword in question for keyword in ["\u622a\u6b62", "\u5831\u540d\u622a\u6b62", "\u4ec0\u9ebc\u6642\u5019"]
     )
     use_llm = response.get("answer_style") != "direct" and not asks_deadline
-    llm_answer = generate_llm_answer(question, category, matches, response["sources"]) if use_llm else None
+    llm_answer = (
+        generate_llm_answer(
+            question,
+            category,
+            matches,
+            response["sources"],
+            full_knowledge=fallback_text,
+        )
+        if use_llm
+        else None
+    )
     response["llm_used"] = bool(llm_answer)
     if llm_answer:
         response["answer"] = llm_answer
+        response["matched"] = True
+        if not response["sources"]:
+            response["sources"] = ["整合知識庫"]
     saved = store.append(
         "chat_logs",
         {
