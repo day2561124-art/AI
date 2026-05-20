@@ -40,6 +40,53 @@
 - 前端啟動：在 `frontend-react` 執行 `npm run dev`（已於本機啟動開發伺服器）。
 
 註記：部分回應包含由知識庫文字編碼造成的字元顯示問題，建議確認檔案編碼（UTF-8-sig/Big5）與前端顯示邏輯。
+
+## 部署 (Render)
+
+以下為將整個專案部署在 Render（單一平台）的建議步驟：
+
+1. 在 Render 建立一個新專案並連結至你的 Git 倉庫。
+2. 在 Render UI 新增一個 Managed Postgres（starter），會產生 `DATABASE_URL`，將名稱記下。
+3. 建立 Web Service（Backend）
+	- 類型：Docker
+	- Dockerfile：`backend/Dockerfile`（已加入專案）
+	- 啟動命令：預設指向 Dockerfile 已設定 `uvicorn`，Render 會使用 `PORT` 環境變數。
+	- 環境變數：在 Render 上設定 `ADMIN_TOKEN`、`OPENAI_API_KEY`（如啟用 LLM）、`KNOWLEDGE_BASE_PATH`（若你的知識庫放在 repo，可設定檔名）、`DATABASE_URL`（使用 Managed Postgres 提供的值）。
+4. 建立 Static Site（Frontend）
+	- 路徑：`frontend-react`
+	- Build command：`npm install && npm run build`
+	- Publish directory：`dist`
+	- 如需呼叫後端 API，設定 `VITE_API_BASE_URL` 指向後端 URL。
+5. 部署並觀察日誌，若需要可在 Render 上設定自動部署（on push）。
+
+本專案已包含：
+- `backend/Dockerfile`：用於後端服務容器化。
+- `render.yaml`：示範 Render 的 manifest（可在 Render UI 匯入或手動建立服務）。
+
+本地測試 Docker（可選）
+
+```bash
+docker build -t ai-customer-backend ./backend
+docker run -e ADMIN_TOKEN=dev-admin-token -p 8000:8000 ai-customer-backend
+```
+
+匯入 `render.yaml`（快速建立服務）
+
+1. 登入 Render，進入 Dashboard → Create a new → Import from Repo。
+2. 選擇你的 GitHub 倉庫，Render 會偵測 `render.yaml` 並提供匯入選項。
+3. 在匯入流程中選擇要建立的服務（Postgres / Web Service / Static Site），並在 Environment 變數頁面填入：
+	- `ADMIN_TOKEN`、`OPENAI_API_KEY`（如要啟用 LLM）、`KNOWLEDGE_BASE_PATH`（若不是 repo 預設檔名需調整）、`DATABASE_URL`（由 Managed Postgres 提供）
+4. 建立後可在 Settings 開啟 Auto Deploy (On Push)，Render 會在你 push 到 main 時自動部署。
+
+CI 與自動部署
+
+本專案已新增 GitHub Actions 工作流程 `.github/workflows/ci.yml`：
+- 執行後端 smoke tests（`backend/scripts/smoke_test.py`）
+- 編譯前端（`frontend-react`）
+
+當你在 Render 建立服務並啟用 Auto Deploy（連結 GitHub repo）後，Push 到 `main` 將觸發 Render 的部署程序，同時 GitHub Actions 也會在 PR 或 push 時先跑 CI 驗證。
+
+
 - 課程資訊頁
 - FAQ 頁
 - 報名流程導覽頁

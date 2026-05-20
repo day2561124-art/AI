@@ -1,0 +1,33 @@
+# Render deployment manifest
+# - Managed Postgres for persistent data
+# - Web service for backend using Dockerfile
+# - Static site for frontend-react (Vite build)
+
+databases:
+  - name: ai-customer-db
+    engine: postgres
+    version: "15"
+    plan: starter
+
+services:
+  - type: web
+    name: ai-customer-backend
+    env: docker
+    plan: free
+    docker:
+      dockerfilePath: backend/Dockerfile
+    envVars:
+      - key: ADMIN_TOKEN
+      - key: OPENAI_API_KEY
+      - key: KNOWLEDGE_BASE_PATH
+      - key: VECTOR_STORE_TYPE
+      - key: EMBEDDING_MODEL
+      - key: DATABASE_URL
+
+staticSites:
+  - name: ai-customer-frontend
+    path: frontend-react
+    buildCommand: npm install && npm run build
+    publishPath: dist
+    envVars:
+      - key: VITE_API_BASE
