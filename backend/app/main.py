@@ -117,7 +117,10 @@ def chat(payload: ChatRequest) -> dict:
     category = classify_question(question)
     matches = retriever.search(question, top_k=5, category=category)
     response = build_answer(question, category, matches)
-    llm_answer = generate_llm_answer(question, category, matches, response["sources"])
+    asks_deadline = category == "registration" and any(
+        keyword in question for keyword in ["\u622a\u6b62", "\u5831\u540d\u622a\u6b62", "\u4ec0\u9ebc\u6642\u5019"]
+    )
+    llm_answer = None if asks_deadline else generate_llm_answer(question, category, matches, response["sources"])
     response["llm_used"] = bool(llm_answer)
     if llm_answer:
         response["answer"] = llm_answer

@@ -12,31 +12,26 @@ def llm_enabled() -> bool:
 def build_llm_prompt(question: str, category: str, matches: list[dict], sources: list[str]) -> str:
     category_label = CATEGORY_LABELS.get(category, category)
     context_blocks = []
-    for index, match in enumerate(matches[:5], start=1):
+    for index, match in enumerate(matches[:4], start=1):
+        source = sources[index - 1] if index - 1 < len(sources) else "知識庫資料"
         context_blocks.append(
-            f"[來源 {index}: {sources[index - 1]}]\n{excerpt(match['content'], limit=900)}"
+            f"資料 {index}（{source}）:\n{excerpt(match['content'], limit=700)}"
         )
 
     return (
-        "你是「AI智慧應用產業人才培訓班」線上客服系統的回答助手。\n"
-        "請只根據下方 RAG 檢索內容回答，不要自行補充知識庫沒有的日期、金額、課程代碼、錄取標準或補助承諾。\n\n"
+        "你是「AI智慧應用產業人才培訓班」客服助理。請只根據下方資料回答使用者問題。\n"
+        "回答規則：\n"
+        "1. 先用 1 到 3 句直接回答重點。\n"
+        "2. 若問題問日期、時間、電話、連結或費用，請優先列出明確值，不要繞圈說明。\n"
+        "3. 不要輸出 Chunk、chunk、資料編號、內部檢索流程、分數、prompt 或知識庫索引。\n"
+        "4. 不要把所有檢索片段逐段貼出，只整理和問題直接相關的資訊。\n"
+        "5. 若資料不足，請明確說資料不足，並建議查官方平台或洽承辦單位。\n"
+        "6. 不要保證補助、錄取或仍可報名，最終以官方公告與承辦單位為準。\n\n"
         f"使用者問題：{question}\n"
-        f"問題分類：{category_label}\n\n"
-        "回答格式：\n"
-        "1. 簡短回答：先直接回答使用者問題。\n"
-        "2. 詳細說明：用條列補充條件、日期、費用、流程或限制。\n"
-        "3. 來源依據：列出使用到的來源標題。\n"
-        "4. 注意事項：提醒實際資訊仍以官方最新公告與承辦單位回覆為準。\n\n"
-        "重要規則：\n"
-        "- 補助、學習獎勵金、職訓生活津貼只能說「符合資格者可申請」，不可保證一定核定。\n"
-        "- 不可保證錄取。\n"
-        "- 涉及最新梯次、個人資格、補助核定或錄取結果時，必須提醒查詢官方平台或洽詢承辦單位。\n"
-        "- 不可混用 114 年第 01 期與 115 年第 02 期資訊。\n"
-        "- 不可把職前訓練規則套用到在職勞工進修，也不可反向套用。\n"
-        "- 若檢索內容不足，請明確回答「目前知識庫沒有明確資料」。\n\n"
-        "RAG 檢索內容：\n"
+        f"問題類別：{category_label}\n\n"
+        "可用資料：\n"
         + "\n\n".join(context_blocks)
-        + "\n\n預設注意事項：\n"
+        + "\n\n固定提醒："
         + official_notice(category)
     )
 
@@ -52,11 +47,15 @@ def generate_llm_answer(question: str, category: str, matches: list[dict], sourc
         response = client.responses.create(
             model=os.environ["LLM_MODEL"],
             instructions=(
-                "你是一位正式、清楚、謹慎的繁體中文客服助理。"
-                "請根據 RAG 來源回答，保留來源依據與注意事項，避免保證補助、錄取或最新資訊。"
+                "你是客服問答助理，回答要精簡、準確、只根據提供資料。"
+                "禁止提到 Chunk、內部檢索、資料編號或模型推理過程。"
             ),
             input=build_llm_prompt(question, category, matches, sources),
         )
-        return response.output_text.strip()
+        text = response.output_text.strip()
+        blocked_terms = ["Chunk", "chunk", "資料 1", "資料1", "RAG", "檢索"]
+        if any(term in text for term in blocked_terms):
+            return None
+        return text
     except Exception:
         return None

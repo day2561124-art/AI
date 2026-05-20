@@ -1,3 +1,6 @@
+import re
+
+
 CATEGORY_LABELS = {
     "course": "\u8ab2\u7a0b\u8cc7\u8a0a",
     "registration": "\u5831\u540d\u65b9\u5f0f",
@@ -85,7 +88,6 @@ def source_label(match: dict, category: str | None = None) -> str:
         parts.append("\u7b2c 01 \u671f")
     if metadata.get("term") == "term-02":
         parts.append("\u7b2c 02 \u671f")
-    parts.append(f"chunk {metadata.get('chunk_index', match['id'])}")
     return " / ".join(parts)
 
 
@@ -103,6 +105,25 @@ def brief_answer(category: str, matches: list[dict]) -> str:
     if category in {"subsidy", "admission", "eligibility"}:
         return f"\u6839\u64da\u77e5\u8b58\u5eab\uff0c\u6b64\u554f\u984c\u5c6c\u65bc\u300c{label}\u300d\uff1b\u7cfb\u7d71\u53ea\u80fd\u8aaa\u660e\u53ef\u80fd\u689d\u4ef6\u8207\u7533\u8acb\u65b9\u5411\uff0c\u4e0d\u80fd\u4fdd\u8b49\u4e00\u5b9a\u901a\u904e\u6216\u9304\u53d6\u3002"
     return f"\u6839\u64da\u77e5\u8b58\u5eab\uff0c\u4ee5\u4e0b\u662f\u300c{label}\u300d\u7684\u76f8\u95dc\u8cc7\u8a0a\u3002"
+
+
+def direct_answer(question: str, category: str, matches: list[dict]) -> str | None:
+    text = "\n".join(match["content"] for match in matches[:4])
+    asks_deadline = any(keyword in question for keyword in ["\u622a\u6b62", "\u5831\u540d\u622a\u6b62", "\u4ec0\u9ebc\u6642\u5019"])
+    if category == "registration" and asks_deadline:
+        deadline_match = re.search(r"\u5831\u540d\u622a\u6b62[^\d]*(\d{3}/\d{2}/\d{2})\s*(\d{1,2}:\d{2})?", text)
+        if deadline_match:
+            date = deadline_match.group(1)
+            time = deadline_match.group(2) or ""
+            return (
+                "\u7c21\u77ed\u56de\u7b54\uff1a\n"
+                f"115 \u5e74\u7b2c 02 \u671f\u7684\u5831\u540d\u622a\u6b62\u6642\u9593\u662f {date}"
+                + (f" {time}" if time else "")
+                + "\u3002\n\n"
+                "\u6ce8\u610f\u4e8b\u9805\uff1a\n"
+                + official_notice(category)
+            )
+    return None
 
 
 def build_answer(question: str, category: str, matches: list[dict]) -> dict:
@@ -125,6 +146,17 @@ def build_answer(question: str, category: str, matches: list[dict]) -> dict:
         }
 
     sources = [source_label(match, category) for match in matches]
+    direct = direct_answer(question, category, matches)
+    if direct:
+        return {
+            "answer": direct,
+            "category": category,
+            "category_label": CATEGORY_LABELS.get(category, category),
+            "sources": sources,
+            "notice": official_notice(category),
+            "matched": True,
+        }
+
     detail_items = [f"{index}. {excerpt(match['content'])}" for index, match in enumerate(matches[:3], start=1)]
     answer = (
         "\u7c21\u77ed\u56de\u7b54\uff1a\n"
