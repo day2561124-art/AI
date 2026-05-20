@@ -116,11 +116,13 @@ def chat(payload: ChatRequest) -> dict:
     question = payload.question.strip()
     category = classify_question(question)
     matches = retriever.search(question, top_k=5, category=category)
-    response = build_answer(question, category, matches)
+    fallback_text = "\n".join(chunk.content for chunk in chunks)
+    response = build_answer(question, category, matches, fallback_text=fallback_text)
     asks_deadline = category == "registration" and any(
         keyword in question for keyword in ["\u622a\u6b62", "\u5831\u540d\u622a\u6b62", "\u4ec0\u9ebc\u6642\u5019"]
     )
-    llm_answer = None if asks_deadline else generate_llm_answer(question, category, matches, response["sources"])
+    use_llm = response.get("answer_style") != "direct" and not asks_deadline
+    llm_answer = generate_llm_answer(question, category, matches, response["sources"]) if use_llm else None
     response["llm_used"] = bool(llm_answer)
     if llm_answer:
         response["answer"] = llm_answer

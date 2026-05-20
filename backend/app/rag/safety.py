@@ -30,6 +30,21 @@ TOPIC_LABELS = {
 
 def classify_question(question: str) -> str:
     rules = [
+        ("\u5831\u540d\u9023\u7d50", "registration"),
+        ("\u5831\u540d\u7db2\u5740", "registration"),
+        ("\u5831\u540d", "registration"),
+        ("\u622a\u6b62", "registration"),
+        ("\u5e73\u53f0", "registration"),
+        ("\u9023\u7d50", "registration"),
+        ("\u7db2\u5740", "registration"),
+        ("\u8ab2\u7a0b\u4ee3\u78bc", "registration"),
+        ("\u67e5\u8a62", "registration"),
+        ("\u53f0\u7063\u5c31\u696d\u901a", "registration"),
+        ("\u4e0a\u8ab2", "course"),
+        ("\u5730\u9ede", "course"),
+        ("\u8a13\u7df4\u5730\u9ede", "course"),
+        ("\u6642\u6578", "course"),
+        ("\u7e3d\u6642\u6578", "course"),
         ("\u5728\u8077", "on-job-training"),
         ("\u8077\u524d", "pre-job-training"),
         ("\u88dc\u52a9", "subsidy"),
@@ -41,11 +56,6 @@ def classify_question(question: str) -> str:
         ("\u9818", "subsidy"),
         ("\u7504\u8a66", "exam"),
         ("\u8003\u8a66", "exam"),
-        ("\u5831\u540d", "registration"),
-        ("\u622a\u6b62", "registration"),
-        ("\u5e73\u53f0", "registration"),
-        ("\u67e5\u8a62", "registration"),
-        ("\u53f0\u7063\u5c31\u696d\u901a", "registration"),
         ("\u96fb\u8a71", "contact"),
         ("\u806f\u7d61", "contact"),
         ("LINE", "contact"),
@@ -118,26 +128,85 @@ def unique_sources(matches: list[dict], category: str) -> list[str]:
     return sources
 
 
-def direct_answer(question: str, category: str, matches: list[dict]) -> str | None:
-    text = "\n".join(match["content"] for match in matches[:4])
-    asks_deadline = any(keyword in question for keyword in ["\u622a\u6b62", "\u5831\u540d\u622a\u6b62", "\u4ec0\u9ebc\u6642\u5019"])
-    if category == "registration" and asks_deadline:
+def has_any(question: str, keywords: list[str]) -> bool:
+    return any(keyword.lower() in question.lower() for keyword in keywords)
+
+
+def fact_answer(text: str, question: str, category: str) -> str | None:
+    if has_any(question, ["\u4e0a\u8ab2", "\u5730\u9ede", "\u8a13\u7df4\u5730\u9ede"]):
+        location_matches = re.findall(r"(?:^|\n)-?\s*\u8a13\u7df4\u5730\u9ede[^\uff1a:]*[\uff1a:]\s*([^\n\u3002]+)", text)
+        for location in location_matches:
+            location = location.strip()
+            if "\u6821\u5340" in location or "\u8857" in location:
+                return f"\u4e0a\u8ab2\u5730\u9ede\u70ba{location}\u3002"
+        if location_matches:
+            return f"\u4e0a\u8ab2\u5730\u9ede\u70ba{location_matches[0].strip()}\u3002"
+
+    if has_any(question, ["\u96fb\u8a71", "\u806f\u7d61", "\u6d3d\u8a62"]):
+        phone_match = re.search(r"0\d{1,2}-?\d{3}-?\d{4}", text)
+        if phone_match:
+            return f"\u6d3d\u8a62\u96fb\u8a71\u70ba {phone_match.group(0)}\u3002"
+
+    if has_any(question, ["LINE", "line", "\u5b98\u65b9 line"]):
+        line_match = re.search(r"@[\w\d]+", text)
+        if line_match:
+            return f"\u5b98\u65b9 LINE \u70ba {line_match.group(0)}\u3002"
+
+    if has_any(question, ["\u6642\u6578", "\u7e3d\u6642\u6578", "\u591a\u5c11\u5c0f\u6642"]):
+        hours_match = re.search(r"(\d{2,4})\s*\u5c0f\u6642", text)
+        if hours_match:
+            return f"\u8ab2\u7a0b\u7e3d\u6642\u6578\u70ba {hours_match.group(1)} \u5c0f\u6642\u3002"
+
+    if category == "registration" and has_any(question, ["\u622a\u6b62", "\u5831\u540d\u622a\u6b62", "\u4ec0\u9ebc\u6642\u5019"]):
         deadline_match = re.search(r"\u5831\u540d\u622a\u6b62[^\d]*(\d{3}/\d{2}/\d{2})\s*(\d{1,2}:\d{2})?", text)
         if deadline_match:
             date = deadline_match.group(1)
             time = deadline_match.group(2) or ""
-            return (
-                "\u7c21\u77ed\u56de\u7b54\uff1a\n"
-                f"115 \u5e74\u7b2c 02 \u671f\u7684\u5831\u540d\u622a\u6b62\u6642\u9593\u662f {date}"
-                + (f" {time}" if time else "")
-                + "\u3002\n\n"
-                "\u6ce8\u610f\u4e8b\u9805\uff1a\n"
-                + official_notice(category)
-            )
+            return f"115 \u5e74\u7b2c 02 \u671f\u7684\u5831\u540d\u622a\u6b62\u6642\u9593\u662f {date}{f' {time}' if time else ''}\u3002"
+
+    if category == "registration" and has_any(question, ["\u5831\u540d\u9023\u7d50", "\u5831\u540d\u7db2\u5740", "\u600e\u9ebc\u5831\u540d", "\u5831\u540d"]):
+        url_match = re.search(r"https://its\.taiwanjobs\.gov\.tw/Course/Detail\?ID=\d+", text)
+        if url_match:
+            return f"\u5831\u540d\u9801\u9762\u70ba {url_match.group(0)}\u3002"
+
+    if category == "subsidy" and has_any(question, ["8000", "8,000", "\u734e\u52f5\u91d1"]):
+        return "\u77e5\u8b58\u5eab\u63d0\u5230\uff0c15-29 \u6b72\u9752\u5e74\u7b26\u5408\u8cc7\u683c\u8005\u53ef\u7533\u8acb\u6bcf\u6708\u65b0\u81fa\u5e63 8,000 \u5143\u5b78\u7fd2\u734e\u52f5\u91d1\uff1b\u5be6\u969b\u8cc7\u683c\u8207\u6838\u5b9a\u4ecd\u4ee5\u5b98\u65b9\u5be9\u6838\u70ba\u6e96\u3002"
+
+    if category == "subsidy" and has_any(question, ["\u514d\u5b78\u8cbb", "\u5168\u984d", "\u88dc\u52a9"]):
+        if "\u5168\u984d\u514d\u5b78\u8cbb" in text:
+            return "\u7b2c 02 \u671f\u516c\u544a\u63d0\u5230\u7b26\u5408\u8cc7\u683c\u8005\u53ef\u5168\u984d\u514d\u5b78\u8cbb\uff1b\u5be6\u969b\u88dc\u52a9\u7d50\u679c\u4ecd\u4ee5\u5b98\u65b9\u5be9\u6838\u70ba\u6e96\u3002"
+        return "\u88dc\u52a9\u8cc7\u683c\u8207\u91d1\u984d\u9700\u4f9d\u5b98\u65b9\u5be9\u6838\u8a8d\u5b9a\uff0c\u7cfb\u7d71\u4e0d\u80fd\u4fdd\u8b49\u4e00\u5b9a\u901a\u904e\u6216\u5168\u984d\u88dc\u52a9\u3002"
+
+    if category == "exam" and has_any(question, ["\u7504\u8a66", "\u8003\u8a66"]):
+        exam_date = re.search(r"\u7504\u8a66\u65e5\u671f[^\uff1a:]*[\uff1a:]\s*([^\n\u3002]+)", text)
+        exam_scope = re.search(r"\u8a66\u984c\u7bc4\u570d[^\uff1a:]*[\uff1a:]\s*([^\n\u3002]+)", text)
+        if exam_date or exam_scope:
+            parts = []
+            if exam_date:
+                parts.append(f"\u7504\u8a66\u65e5\u671f\u70ba{exam_date.group(1).strip()}")
+            if exam_scope:
+                parts.append(f"\u8a66\u984c\u7bc4\u570d\u70ba{exam_scope.group(1).strip()}")
+            return "\uff1b".join(parts) + "\u3002"
+
     return None
 
 
-def build_answer(question: str, category: str, matches: list[dict]) -> dict:
+def direct_answer(question: str, category: str, matches: list[dict], fallback_text: str = "") -> str | None:
+    text = "\n".join(match["content"] for match in matches[:4])
+    if fallback_text:
+        text = text + "\n" + fallback_text
+    fact = fact_answer(text, question, category)
+    if fact:
+        return (
+            "\u7c21\u77ed\u56de\u7b54\uff1a\n"
+            + fact
+            + "\n\n\u6ce8\u610f\u4e8b\u9805\uff1a\n"
+            + official_notice(category)
+        )
+    return None
+
+
+def build_answer(question: str, category: str, matches: list[dict], fallback_text: str = "") -> dict:
     if not matches:
         answer = (
             "\u7c21\u77ed\u56de\u7b54\uff1a\n"
@@ -157,22 +226,24 @@ def build_answer(question: str, category: str, matches: list[dict]) -> dict:
         }
 
     sources = unique_sources(matches, category)
-    direct = direct_answer(question, category, matches)
+    direct = direct_answer(question, category, matches, fallback_text=fallback_text)
     if direct:
+        direct_sources = sources or [CATEGORY_LABELS.get(category, category)]
         return {
             "answer": direct,
             "category": category,
             "category_label": CATEGORY_LABELS.get(category, category),
-            "sources": sources,
+            "sources": direct_sources,
             "notice": official_notice(category),
             "matched": True,
+            "answer_style": "direct",
         }
 
-    detail_items = [f"{index}. {excerpt(match['content'])}" for index, match in enumerate(matches[:3], start=1)]
+    detail_items = [f"- {excerpt(match['content'], limit=180)}" for match in matches[:2]]
     answer = (
         "\u7c21\u77ed\u56de\u7b54\uff1a\n"
         + brief_answer(category, matches)
-        + "\n\n\u8a73\u7d30\u8aaa\u660e\uff1a\n"
+        + "\n\n\u91cd\u9ede\u8cc7\u8a0a\uff1a\n"
         + "\n\n".join(detail_items)
         + "\n\n\u4f86\u6e90\u4f9d\u64da\uff1a\n"
         + "\n".join(f"- {source}" for source in sources)
