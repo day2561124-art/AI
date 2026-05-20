@@ -26,8 +26,8 @@ services:
 
 staticSites:
   - name: ai-customer-frontend
-    path: frontend-react
+    rootDir: frontend-react
     buildCommand: npm install && npm run build
-    publishPath: dist
+    staticPublishPath: frontend-react/dist
     envVars:
       - key: VITE_API_BASE
