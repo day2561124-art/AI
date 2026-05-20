@@ -4,7 +4,6 @@ export const navItems = [
   ["faq", "FAQ"],
   ["process", "報名流程"],
   ["contact", "聯絡資訊"],
-  ["admin", "管理後台"],
 ];
 
 export const quickQuestions = [
@@ -60,4 +59,3 @@ export const steps = [
   ["參加甄試或審核", "若課程有甄試或資格審核，需按照公告時間完成。"],
   ["確認錄取與參訓", "錄取、補助核定與津貼請領皆以官方或承辦單位認定為準。"],
 ];
-
