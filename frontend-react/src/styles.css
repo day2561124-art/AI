@@ -33,6 +33,17 @@ body::before {
   pointer-events: none;
 }
 
+body::after {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  background:
+    linear-gradient(90deg, rgba(15, 118, 110, 0.10), transparent 18%) left center / 28% 100% no-repeat,
+    linear-gradient(270deg, rgba(14, 165, 233, 0.10), transparent 18%) right center / 28% 100% no-repeat;
+  pointer-events: none;
+}
+
 button,
 input,
 textarea {
@@ -43,6 +54,82 @@ textarea {
   width: min(1080px, calc(100% - 40px));
   margin: 0 auto;
   padding: 28px 0 56px;
+}
+
+.side-rail {
+  position: fixed;
+  top: 132px;
+  bottom: 76px;
+  z-index: 0;
+  display: grid;
+  align-content: center;
+  gap: 22px;
+  width: clamp(120px, 12vw, 210px);
+  color: rgba(15, 82, 88, 0.34);
+  pointer-events: none;
+}
+
+.side-rail::before,
+.side-rail::after {
+  position: absolute;
+  content: "";
+  pointer-events: none;
+}
+
+.side-rail::before {
+  inset: 0;
+  border: 1px solid rgba(15, 118, 110, 0.10);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.46), rgba(255, 255, 255, 0.12)),
+    repeating-linear-gradient(0deg, transparent 0 18px, rgba(15, 118, 110, 0.06) 18px 19px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.48);
+}
+
+.side-rail::after {
+  width: 86px;
+  height: 86px;
+  border: 1px solid rgba(15, 118, 110, 0.16);
+  transform: rotate(45deg);
+}
+
+.side-rail-left {
+  left: clamp(18px, 4vw, 84px);
+}
+
+.side-rail-left::after {
+  top: 42px;
+  right: -16px;
+}
+
+.side-rail-right {
+  right: clamp(18px, 4vw, 84px);
+}
+
+.side-rail-right::after {
+  bottom: 42px;
+  left: -16px;
+}
+
+.side-rail span {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 24px;
+  font-size: clamp(18px, 2vw, 30px);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  writing-mode: vertical-rl;
+}
+
+.side-rail span::before {
+  width: 8px;
+  height: 8px;
+  border-radius: 8px;
+  content: "";
+  background: rgba(15, 118, 110, 0.30);
 }
 
 .site-header {
@@ -506,5 +593,11 @@ dd {
   .admin-grid,
   .timeline {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1320px) {
+  .side-rail {
+    display: none;
   }
 }
