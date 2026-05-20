@@ -107,6 +107,17 @@ def brief_answer(category: str, matches: list[dict]) -> str:
     return f"\u6839\u64da\u77e5\u8b58\u5eab\uff0c\u4ee5\u4e0b\u662f\u300c{label}\u300d\u7684\u76f8\u95dc\u8cc7\u8a0a\u3002"
 
 
+def unique_sources(matches: list[dict], category: str) -> list[str]:
+    sources: list[str] = []
+    seen: set[str] = set()
+    for match in matches:
+        source = source_label(match, category)
+        if source not in seen:
+            sources.append(source)
+            seen.add(source)
+    return sources
+
+
 def direct_answer(question: str, category: str, matches: list[dict]) -> str | None:
     text = "\n".join(match["content"] for match in matches[:4])
     asks_deadline = any(keyword in question for keyword in ["\u622a\u6b62", "\u5831\u540d\u622a\u6b62", "\u4ec0\u9ebc\u6642\u5019"])
@@ -145,7 +156,7 @@ def build_answer(question: str, category: str, matches: list[dict]) -> dict:
             "matched": False,
         }
 
-    sources = [source_label(match, category) for match in matches]
+    sources = unique_sources(matches, category)
     direct = direct_answer(question, category, matches)
     if direct:
         return {

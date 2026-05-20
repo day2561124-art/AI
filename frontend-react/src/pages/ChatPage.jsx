@@ -8,6 +8,10 @@ export function ChatPage() {
   const [answer, setAnswer] = useState(null);
   const [loading, setLoading] = useState(false);
   const [feedbackStatus, setFeedbackStatus] = useState("");
+  const uniqueSources = Array.from(new Set(answer?.sources || []));
+  const shouldShowNotice = Boolean(
+    answer?.notice && !answer?.answer?.includes(answer.notice)
+  );
 
   async function submitQuestion(event) {
     event.preventDefault();
@@ -73,12 +77,16 @@ export function ChatPage() {
             <p>{answer.answer}</p>
             <h3>來源依據</h3>
             <ul>
-              {(answer.sources?.length ? answer.sources : ["目前沒有可引用的明確來源"]).map((source) => (
+              {(uniqueSources.length ? uniqueSources : ["目前沒有可引用的明確來源"]).map((source) => (
                 <li key={source}>{source}</li>
               ))}
             </ul>
-            <h3>注意事項</h3>
-            <p>{answer.notice}</p>
+            {shouldShowNotice && (
+              <>
+                <h3>注意事項</h3>
+                <p>{answer.notice}</p>
+              </>
+            )}
             <div className="feedback-actions">
               <button type="button" onClick={() => handleFeedback(true)}>有幫助</button>
               <button type="button" onClick={() => handleFeedback(false)}>需改善</button>
@@ -90,4 +98,3 @@ export function ChatPage() {
     </>
   );
 }
-
