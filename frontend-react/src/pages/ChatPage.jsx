@@ -3,15 +3,23 @@ import { Intro } from "../components/Intro";
 import { quickQuestions } from "../data/content";
 import { askQuestion, sendFeedback } from "../services/api";
 
+function cleanAnswerText(text = "") {
+  const markers = ["來源依據：", "來源依據:", "注意事項：", "注意事項:"];
+  const cutIndex = markers
+    .map((marker) => text.indexOf(marker))
+    .filter((index) => index >= 0)
+    .sort((a, b) => a - b)[0];
+  return (cutIndex >= 0 ? text.slice(0, cutIndex) : text).trim();
+}
+
 export function ChatPage() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState(null);
   const [loading, setLoading] = useState(false);
   const [feedbackStatus, setFeedbackStatus] = useState("");
+  const displayAnswer = cleanAnswerText(answer?.answer);
   const uniqueSources = Array.from(new Set(answer?.sources || []));
-  const shouldShowNotice = Boolean(
-    answer?.notice && !answer?.answer?.includes(answer.notice)
-  );
+  const shouldShowNotice = Boolean(answer?.notice);
 
   async function submitQuestion(event) {
     event.preventDefault();
@@ -82,7 +90,7 @@ export function ChatPage() {
         {answer && (
           <article className="answer-box">
             <h2>回答</h2>
-            <p>{answer.answer}</p>
+            <p>{displayAnswer || answer.answer}</p>
             <h3>來源依據</h3>
             <ul>
               {(uniqueSources.length ? uniqueSources : ["目前沒有可引用的明確來源"]).map((source) => (
