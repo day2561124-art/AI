@@ -579,6 +579,39 @@ input:focus {
   line-height: 1.8;
 }
 
+.link-list {
+  display: grid;
+  gap: 10px;
+}
+
+.link-list a {
+  display: grid;
+  gap: 3px;
+  min-height: 58px;
+  border: 1px solid rgba(15, 118, 110, 0.16);
+  border-radius: 8px;
+  padding: 11px 13px 10px;
+  color: #0f514c;
+  background: rgba(231, 245, 242, 0.62);
+  text-decoration: none;
+  transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.link-list a:hover {
+  border-color: rgba(15, 118, 110, 0.42);
+  background: #e7f5f2;
+  transform: translateY(-1px);
+}
+
+.link-list span {
+  font-weight: 800;
+}
+
+.link-list small {
+  color: #64748b;
+  line-height: 1.5;
+}
+
 .notice-band {
   position: relative;
   overflow: hidden;

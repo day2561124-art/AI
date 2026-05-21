@@ -1,5 +1,28 @@
 import { Intro } from "../components/Intro";
 
+const platformLinks = [
+  {
+    label: "台灣就業通課程頁面",
+    description: "115 年第 02 期立即報名",
+    href: "https://its.taiwanjobs.gov.tw/Course/Detail?ID=161756",
+  },
+  {
+    label: "114 年第 01 期報名頁",
+    description: "知識庫公告提供之報名網址",
+    href: "https://reurl.cc/eVd7bQ",
+  },
+  {
+    label: "課程簡介",
+    description: "AI智慧應用產業人才培訓班介紹",
+    href: "https://pse.is/85tqme",
+  },
+  {
+    label: "國立臺南大學 AI 據點",
+    description: "AI 智慧技術與應用人才培訓據點",
+    href: "https://ppt.cc/f5cezx",
+  },
+];
+
 export function ContactPage() {
   return (
     <>
@@ -15,16 +38,22 @@ export function ContactPage() {
         </article>
         <article className="info-card">
           <h2>查詢平台</h2>
-          <ul>
-            <li>台灣就業通</li>
-            <li>職前訓練網</li>
-            <li>產業新尖兵相關頁面</li>
-            <li>勞動部在職訓練網</li>
-            <li>國立臺南大學 AI 智慧技術與應用人才培訓據點</li>
-          </ul>
+          <div className="link-list">
+            {platformLinks.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`${item.label}，另開新視窗`}
+              >
+                <span>{item.label}</span>
+                <small>{item.description}</small>
+              </a>
+            ))}
+          </div>
         </article>
       </section>
     </>
   );
 }
-
