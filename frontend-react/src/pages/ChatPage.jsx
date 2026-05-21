@@ -55,8 +55,13 @@ export function ChatPage() {
       <section className="chat-panel">
         <div className="quick-actions">
           {quickQuestions.map((item) => (
-            <button key={item} type="button" onClick={() => setQuestion(item)}>
-              {item.length > 18 ? item.slice(0, 18) : item}
+            <button
+              key={item.question}
+              type="button"
+              title={item.question}
+              onClick={() => setQuestion(item.question)}
+            >
+              {item.label}
             </button>
           ))}
         </div>
