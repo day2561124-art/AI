@@ -49,7 +49,10 @@ export function ChatPage() {
 
   return (
     <>
-      <Intro eyebrow="AI智慧應用產業人才培訓班" title="AI智慧客服問答系統">
+      <Intro
+        eyebrow="國立臺南大學 × 勞動部勞動力發展署雲嘉南分署｜AI智慧應用產業人才培訓班"
+        title="AI智慧客服問答系統"
+      >
         根據整合知識庫回答課程、報名、補助、甄試、聯絡方式、職前訓練與在職訓練問題。
       </Intro>
       <section className="chat-panel">
