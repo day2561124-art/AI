@@ -5,9 +5,9 @@ export function Layout({ route, children }) {
     <>
       <div className="side-rail side-rail-left" aria-hidden="true">
         <div className="rail-card rail-card-primary">
-          <small>Knowledge Core</small>
-          <strong>RAG</strong>
-          <span>14 chunks indexed</span>
+          <small>知識核心</small>
+          <strong>知識檢索</strong>
+          <span>14 個知識段落</span>
         </div>
         <div className="rail-node-map">
           <i />
@@ -16,16 +16,16 @@ export function Layout({ route, children }) {
           <i />
         </div>
         <div className="rail-card">
-          <small>Answer Mode</small>
-          <strong>FAQ + AI</strong>
-          <span>concise retrieval</span>
+          <small>回答模式</small>
+          <strong>AI 問答</strong>
+          <span>精簡回答</span>
         </div>
       </div>
       <div className="side-rail side-rail-right" aria-hidden="true">
         <div className="rail-card rail-card-primary">
-          <small>Program</small>
-          <strong>255H</strong>
-          <span>practical training</span>
+          <small>課程規劃</small>
+          <strong>255 小時</strong>
+          <span>實戰培訓</span>
         </div>
         <div className="rail-meter">
           <span style={{ "--h": "72%" }} />
@@ -34,9 +34,9 @@ export function Layout({ route, children }) {
           <span style={{ "--h": "38%" }} />
         </div>
         <div className="rail-card">
-          <small>Campus</small>
-          <strong>NUTN</strong>
-          <span>Fucheng campus</span>
+          <small>校區資訊</small>
+          <strong>臺南大學</strong>
+          <span>府城校區</span>
         </div>
       </div>
       <main className="app-shell">
