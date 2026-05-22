@@ -25,11 +25,18 @@ TOPIC_LABELS = {
     "on-job-training": "\u5728\u8077\u8a13\u7df4",
     "pre-job-training": "\u8077\u524d\u8a13\u7df4",
     "faq": "FAQ",
+    "admission": "\u9304\u53d6\u8207\u8cc7\u683c",
+    "eligibility": "\u5831\u540d\u8cc7\u683c",
 }
 
 
 def classify_question(question: str) -> str:
     rules = [
+        ("\u8ab0\u53ef\u4ee5\u5831\u540d", "eligibility"),
+        ("\u5831\u540d\u8cc7\u683c", "eligibility"),
+        ("\u53c3\u8a13\u8cc7\u683c", "eligibility"),
+        ("\u53c3\u8a13\u5c0d\u8c61", "eligibility"),
+        ("\u5c0d\u8c61", "eligibility"),
         ("\u5831\u540d\u9023\u7d50", "registration"),
         ("\u5831\u540d\u7db2\u5740", "registration"),
         ("\u5831\u540d", "registration"),
@@ -93,7 +100,7 @@ def official_notice(category: str) -> str:
 
 def source_label(match: dict, category: str | None = None) -> str:
     metadata = match["metadata"]
-    topic_key = category if category and category not in {"course", "latest"} else metadata.get("topic", "general")
+    topic_key = category if category and category not in {"latest"} else metadata.get("topic", "general")
     topic = TOPIC_LABELS.get(topic_key, topic_key)
     parts = [topic]
     if metadata.get("year"):
@@ -129,11 +136,18 @@ def unique_sources(matches: list[dict], category: str) -> list[str]:
         if source not in seen:
             sources.append(source)
             seen.add(source)
+    term_sources = [source for source in sources if "\u5e74" in source]
+    if len(term_sources) >= 2:
+        return term_sources
     return sources
 
 
 def has_any(question: str, keywords: list[str]) -> bool:
     return any(keyword.lower() in question.lower() for keyword in keywords)
+
+
+def asks_specific_term(question: str) -> bool:
+    return has_any(question, ["114", "115", "\u7b2c01", "\u7b2c 01", "\u7b2c02", "\u7b2c 02"])
 
 
 def fact_answer(text: str, question: str, category: str) -> str | None:
@@ -169,6 +183,12 @@ def fact_answer(text: str, question: str, category: str) -> str | None:
             return f"115 \u5e74\u7b2c 02 \u671f\u7684\u5831\u540d\u622a\u6b62\u6642\u9593\u662f {date}{f' {time}' if time else ''}\u3002"
 
     if category == "registration" and has_any(question, ["\u5831\u540d\u9023\u7d50", "\u5831\u540d\u7db2\u5740", "\u600e\u9ebc\u5831\u540d", "\u5831\u540d"]):
+        if not asks_specific_term(question):
+            return (
+                "\u5831\u540d\u8cc7\u8a0a\u9700\u5206\u671f\u5225\u67e5\u770b\uff1a"
+                "115 \u5e74\u7b2c 02 \u671f\u53ef\u4f7f\u7528\u7acb\u5373\u5831\u540d\u9801\u9762 https://its.taiwanjobs.gov.tw/Course/Detail?ID=161756\uff1b"
+                "114 \u5e74\u7b2c 01 \u671f\u516c\u544a\u63d0\u4f9b\u53f0\u7063\u5c31\u696d\u901a\u5831\u540d\u7db2\u5740 https://reurl.cc/eVd7bQ \u8207\u8ab2\u7a0b\u4ee3\u78bc 159386\u3002"
+            )
         url_match = re.search(r"https://its\.taiwanjobs\.gov\.tw/Course/Detail\?ID=\d+", text)
         if url_match:
             return f"\u5831\u540d\u9801\u9762\u70ba {url_match.group(0)}\u3002"
@@ -176,10 +196,24 @@ def fact_answer(text: str, question: str, category: str) -> str | None:
     if category == "subsidy" and has_any(question, ["8000", "8,000", "\u734e\u52f5\u91d1"]):
         return "\u77e5\u8b58\u5eab\u63d0\u5230\uff0c15-29 \u6b72\u9752\u5e74\u7b26\u5408\u8cc7\u683c\u8005\u53ef\u7533\u8acb\u6bcf\u6708\u65b0\u81fa\u5e63 8,000 \u5143\u5b78\u7fd2\u734e\u52f5\u91d1\uff1b\u5be6\u969b\u8cc7\u683c\u8207\u6838\u5b9a\u4ecd\u4ee5\u5b98\u65b9\u5be9\u6838\u70ba\u6e96\u3002"
 
+    if category == "eligibility" and has_any(question, ["\u8ab0", "\u8cc7\u683c", "\u5c0d\u8c61", "\u53ef\u4ee5\u5831\u540d", "\u53ef\u4ee5\u53c3\u52a0"]):
+        if not asks_specific_term(question):
+            return (
+                "\u53c3\u8a13\u8cc7\u683c\u9700\u5206\u671f\u5225\u770b\uff1a"
+                "114 \u5e74\u7b2c 01 \u671f\u516c\u544a\u5c0d\u8c61\u5305\u542b\u61c9\u5c46\u7562\u696d\u751f\u3001\u5931\u696d\u8005\u3001\u6b32\u8f49\u8077 AI \u7522\u696d\u4e4b\u5f85\u696d\u8005\u7b49\uff1b"
+                "115 \u5e74\u7b2c 02 \u671f\u516c\u544a\u63d0\u5230\u5e74\u6eff 15 \u6b72\u4ee5\u4e0a\u5931\u696d\u8005\u7b26\u5408\u653f\u5e9c\u88dc\u52a9\u8cc7\u683c\u3002"
+            )
+
     if category == "subsidy" and has_any(question, ["\u4e2d\u9ad8\u9f61", "45 \u6b72", "45\u6b72", "\u7279\u5b9a\u5c0d\u8c61"]):
         return "\u4e2d\u9ad8\u9f61\u8005\u5c6c\u65bc\u53ef\u80fd\u9069\u7528\u8f03\u9ad8\u88dc\u52a9\u7684\u7279\u5b9a\u5c0d\u8c61\uff1b\u77e5\u8b58\u5eab\u63d0\u5230 45 \u6b72\u4ee5\u4e0a\u4e2d\u9ad8\u9f61\u8005\u53ef\u80fd\u88dc\u52a9 100%\uff0c\u5be6\u969b\u8cc7\u683c\u8207\u88dc\u52a9\u6bd4\u4f8b\u4ecd\u4ee5\u5b98\u65b9\u5be9\u6838\u70ba\u6e96\u3002"
 
     if category == "subsidy" and has_any(question, ["\u514d\u5b78\u8cbb", "\u5168\u984d", "\u88dc\u52a9"]):
+        if not asks_specific_term(question):
+            return (
+                "\u88dc\u52a9\u8cc7\u8a0a\u9700\u5206\u671f\u5225\u770b\uff1a"
+                "115 \u5e74\u7b2c 02 \u671f\u516c\u544a\u63d0\u5230\u7b26\u5408\u8cc7\u683c\u8005\u53ef\u5168\u984d\u514d\u5b78\u8cbb\uff1b"
+                "114 \u5e74\u7b2c 01 \u671f\u516c\u544a\u63d0\u5230\u653f\u5e9c\u88dc\u52a9\u5b78\u8cbb 80% \u81f3 100%\uff0c\u5b78\u54e1\u81ea\u4ed8\u7d04 0% \u81f3 20%\u3002"
+            )
         if "\u5168\u984d\u514d\u5b78\u8cbb" in text:
             return "\u7b2c 02 \u671f\u516c\u544a\u63d0\u5230\u7b26\u5408\u8cc7\u683c\u8005\u53ef\u5168\u984d\u514d\u5b78\u8cbb\uff1b\u5be6\u969b\u88dc\u52a9\u7d50\u679c\u4ecd\u4ee5\u5b98\u65b9\u5be9\u6838\u70ba\u6e96\u3002"
         return "\u88dc\u52a9\u8cc7\u683c\u8207\u91d1\u984d\u9700\u4f9d\u5b98\u65b9\u5be9\u6838\u8a8d\u5b9a\uff0c\u7cfb\u7d71\u4e0d\u80fd\u4fdd\u8b49\u4e00\u5b9a\u901a\u904e\u6216\u5168\u984d\u88dc\u52a9\u3002"

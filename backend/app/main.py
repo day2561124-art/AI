@@ -67,6 +67,46 @@ chunks = load_knowledge_base(KNOWLEDGE_PATH)
 retriever = LocalRetriever(chunks)
 
 
+DUAL_TERM_CATEGORIES = {
+    "course",
+    "registration",
+    "subsidy",
+    "exam",
+    "eligibility",
+    "admission",
+    "latest",
+}
+
+
+def mentions_specific_term(question: str) -> bool:
+    return any(
+        keyword in question
+        for keyword in ["114", "115", "\u7b2c01", "\u7b2c 01", "\u7b2c02", "\u7b2c 02"]
+    )
+
+
+def include_both_terms(question: str, category: str, matches: list[dict]) -> list[dict]:
+    if category not in DUAL_TERM_CATEGORIES or mentions_specific_term(question):
+        return matches
+
+    enriched = list(matches)
+    seen_ids = {match["id"] for match in enriched}
+    years = {match["metadata"].get("year") for match in enriched if match["metadata"].get("year")}
+
+    for year in ["114", "115"]:
+        if year in years:
+            continue
+        for candidate in retriever.search(f"{question} {year}", top_k=3, category=category):
+            if candidate["id"] in seen_ids:
+                continue
+            enriched.append(candidate)
+            seen_ids.add(candidate["id"])
+            years.add(year)
+            break
+
+    return enriched[:7]
+
+
 def reload_knowledge() -> dict:
     global chunks, retriever
     chunks = load_knowledge_base(KNOWLEDGE_PATH)
@@ -116,6 +156,7 @@ def chat(payload: ChatRequest) -> dict:
     question = payload.question.strip()
     category = classify_question(question)
     matches = retriever.search(question, top_k=5, category=category)
+    matches = include_both_terms(question, category, matches)
     fallback_text = "\n".join(chunk.content for chunk in chunks)
     response = build_answer(question, category, matches, fallback_text=fallback_text)
     asks_deadline = category == "registration" and any(
