@@ -5,6 +5,7 @@ import os
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
 from app.rag.loader import load_knowledge_base
@@ -52,6 +53,7 @@ def find_knowledge_path() -> Path:
 KNOWLEDGE_PATH = find_knowledge_path()
 store = JsonStore(PROJECT_DIR / "data")
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "dev-admin-token")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://ai-project-frontend-mrm9.onrender.com")
 
 app = FastAPI(title="AI Customer Service API")
 
@@ -149,6 +151,138 @@ def require_admin(x_admin_token: str | None = Header(default=None)) -> None:
 @app.get("/api/health")
 def health() -> dict:
     return {"status": "ok"}
+
+
+@app.get("/", response_class=HTMLResponse)
+@app.get("/admin", response_class=HTMLResponse)
+def staff_entry() -> str:
+    admin_url = f"{FRONTEND_URL.rstrip('/')}/#/admin"
+    public_url = FRONTEND_URL.rstrip("/")
+    return f"""
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>工作人員入口｜AI智慧客服問答系統</title>
+    <style>
+      :root {{
+        color: #172033;
+        background: #eef6f6;
+        font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+      }}
+      body {{
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        background:
+          linear-gradient(135deg, rgba(15,118,110,.11), transparent 34%),
+          repeating-linear-gradient(0deg, rgba(15,118,110,.055) 0 1px, transparent 1px 12px),
+          #f6fafb;
+      }}
+      main {{
+        width: min(860px, calc(100% - 32px));
+        border: 1px solid rgba(15,118,110,.18);
+        border-radius: 12px;
+        padding: clamp(28px, 5vw, 52px);
+        background: rgba(255,255,255,.92);
+        box-shadow: 0 24px 70px rgba(15, 23, 42, .12);
+      }}
+      .eyebrow {{
+        color: #0f766e;
+        font-size: 14px;
+        font-weight: 900;
+        letter-spacing: .08em;
+      }}
+      h1 {{
+        margin: 10px 0 14px;
+        font-size: clamp(34px, 6vw, 56px);
+        line-height: 1.08;
+      }}
+      p {{
+        max-width: 680px;
+        color: #46566f;
+        font-size: 17px;
+        line-height: 1.9;
+      }}
+      .actions {{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 28px;
+      }}
+      a {{
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 46px;
+        border-radius: 8px;
+        padding: 0 18px;
+        color: #fff;
+        background: #0f766e;
+        font-weight: 800;
+        text-decoration: none;
+        box-shadow: 0 12px 24px rgba(15,118,110,.18);
+      }}
+      a.secondary {{
+        color: #0f514c;
+        border: 1px solid rgba(15,118,110,.22);
+        background: #e7f5f2;
+        box-shadow: none;
+      }}
+      .meta {{
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 34px;
+      }}
+      .meta div {{
+        border: 1px solid rgba(148,163,184,.32);
+        border-radius: 8px;
+        padding: 14px;
+        background: rgba(248,250,252,.8);
+      }}
+      .meta span {{
+        display: block;
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 800;
+      }}
+      .meta strong {{
+        display: block;
+        margin-top: 8px;
+        color: #172033;
+      }}
+      @media (max-width: 720px) {{
+        .meta {{
+          grid-template-columns: 1fr;
+        }}
+      }}
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="eyebrow">STAFF PORTAL</div>
+      <h1>AI智慧客服工作人員入口</h1>
+      <p>
+        後端服務已正常運行。工作人員可從這裡進入管理後台，查看瀏覽統計、
+        問答紀錄、使用者回饋、無法回答問題，並管理知識庫。
+      </p>
+      <div class="actions">
+        <a href="{admin_url}">進入管理後台</a>
+        <a class="secondary" href="{public_url}">前往使用者網站</a>
+        <a class="secondary" href="/docs">API 文件</a>
+      </div>
+      <section class="meta" aria-label="服務狀態">
+        <div><span>API</span><strong>Online</strong></div>
+        <div><span>Knowledge Chunks</span><strong>{len(chunks)}</strong></div>
+        <div><span>LLM</span><strong>{"Enabled" if llm_enabled() else "Disabled"}</strong></div>
+      </section>
+    </main>
+  </body>
+</html>
+"""
 
 
 @app.get("/api/knowledge/status")
