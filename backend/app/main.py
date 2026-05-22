@@ -156,7 +156,7 @@ def health() -> dict:
 @app.get("/", response_class=HTMLResponse)
 @app.get("/admin", response_class=HTMLResponse)
 def staff_entry() -> str:
-    admin_url = f"{FRONTEND_URL.rstrip('/')}/#/admin"
+    admin_url = f"{FRONTEND_URL.rstrip('/')}/admin"
     public_url = FRONTEND_URL.rstrip("/")
     return f"""
 <!doctype html>
