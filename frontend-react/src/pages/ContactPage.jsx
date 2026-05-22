@@ -19,7 +19,7 @@ const platformLinks = [
   {
     label: "國立臺南大學 AI 據點",
     description: "AI 智慧技術與應用人才培訓據點",
-    href: "https://ppt.cc/f5cezx",
+    href: "https://www.facebook.com/p/Ai%E6%99%BA%E6%85%A7%E6%8A%80%E8%A1%93%E8%88%87%E6%87%89%E7%94%A8%E4%BA%BA%E6%89%8D%E5%9F%B9%E8%A8%93%E6%93%9A%E9%BB%9E-61574600797491/",
   },
 ];
 
