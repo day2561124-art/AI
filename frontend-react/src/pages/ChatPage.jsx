@@ -49,7 +49,7 @@ export function ChatPage() {
         helpful,
         comment: null,
       });
-      setFeedbackStatus(helpful ? "已儲存有幫助回饋。" : "已儲存需改善回饋。");
+      setFeedbackStatus(helpful ? "已儲存有幫助回饋。" : "已儲存沒幫助回饋。");
     } catch {
       setFeedbackStatus("回饋儲存失敗。");
     }
@@ -105,7 +105,7 @@ export function ChatPage() {
             )}
             <div className="feedback-actions">
               <button type="button" onClick={() => handleFeedback(true)}>有幫助</button>
-              <button type="button" onClick={() => handleFeedback(false)}>需改善</button>
+              <button type="button" onClick={() => handleFeedback(false)}>沒幫助</button>
             </div>
             <p className="feedback-status">{feedbackStatus}</p>
           </article>
