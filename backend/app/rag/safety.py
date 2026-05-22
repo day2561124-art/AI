@@ -7,7 +7,7 @@ CATEGORY_LABELS = {
     "subsidy": "\u88dc\u52a9\u8cbb\u7528",
     "exam": "\u7504\u8a66\u8cc7\u8a0a",
     "contact": "\u806f\u7d61\u65b9\u5f0f",
-    "on-job-training": "\u5728\u8077\u8a13\u7df4",
+    "on-job-training": "\u975e\u672c\u8ab2\u7a0b\u7bc4\u570d",
     "pre-job-training": "\u8077\u524d\u8a13\u7df4",
     "latest": "\u6700\u65b0\u8cc7\u8a0a",
     "admission": "\u9304\u53d6\u8207\u8cc7\u683c",
@@ -22,7 +22,7 @@ TOPIC_LABELS = {
     "subsidy": "\u88dc\u52a9\u8cbb\u7528",
     "exam": "\u7504\u8a66\u8cc7\u8a0a",
     "contact": "\u806f\u7d61\u65b9\u5f0f",
-    "on-job-training": "\u5728\u8077\u8a13\u7df4",
+    "on-job-training": "\u975e\u672c\u8ab2\u7a0b\u7bc4\u570d",
     "pre-job-training": "\u8077\u524d\u8a13\u7df4",
     "faq": "FAQ",
     "admission": "\u9304\u53d6\u8207\u8cc7\u683c",
@@ -85,6 +85,11 @@ def classify_question(question: str) -> str:
 
 def official_notice(category: str) -> str:
     base = "\u5be6\u969b\u8cc7\u8a0a\u4ecd\u4ee5\u5b98\u65b9\u6700\u65b0\u516c\u544a\u8207\u627f\u8fa6\u55ae\u4f4d\u56de\u8986\u70ba\u6e96\u3002"
+    if category == "on-job-training":
+        return (
+            "\u672c\u7cfb\u7d71\u805a\u7126\u300cAI\u667a\u6167\u61c9\u7528\u7522\u696d\u4eba\u624d\u57f9\u8a13\u73ed\u300d"
+            "\u8077\u524d\u8a13\u7df4\u8cc7\u8a0a\uff0c\u4e0d\u63d0\u4f9b\u5728\u8077\u8a13\u7df4\u6216\u5728\u8077\u88dc\u52a9\u7684\u7d30\u7bc0\u89e3\u7b54\u3002"
+        )
     if category in {"subsidy", "admission", "eligibility"}:
         return (
             base
@@ -121,6 +126,8 @@ def excerpt(content: str, limit: int = 420) -> str:
 
 def brief_answer(category: str, matches: list[dict]) -> str:
     label = CATEGORY_LABELS.get(category, category)
+    if category == "on-job-training":
+        return "\u672c\u8ab2\u7a0b\u70ba\u8077\u524d\u8a13\u7df4\uff0c\u4e0d\u6574\u7406\u5728\u8077\u8a13\u7df4\u6216\u5728\u8077\u88dc\u52a9\u8cc7\u8a0a\u3002\u8acb\u6539\u8a62\u554f\u5831\u540d\u8cc7\u683c\u3001\u8077\u524d\u88dc\u52a9\u3001\u9752\u5e74\u734e\u52f5\u91d1\u6216\u8ab2\u7a0b\u5167\u5bb9\u3002"
     if category == "latest":
         return "\u77e5\u8b58\u5eab\u53ef\u63d0\u4f9b\u5df2\u6574\u7406\u7684\u68af\u6b21\u8cc7\u8a0a\uff0c\u4f46\u662f\u5426\u4ecd\u70ba\u6700\u65b0\u6216\u4ecd\u53ef\u5831\u540d\uff0c\u5fc5\u9808\u4ee5\u5b98\u65b9\u5e73\u53f0\u70ba\u6e96\u3002"
     if category in {"subsidy", "admission", "eligibility"}:
@@ -233,6 +240,15 @@ def fact_answer(text: str, question: str, category: str) -> str | None:
 
 
 def direct_answer(question: str, category: str, matches: list[dict], fallback_text: str = "") -> str | None:
+    if category == "on-job-training":
+        return (
+            "\u7c21\u77ed\u56de\u7b54\uff1a\n"
+            "\u672c\u8ab2\u7a0b\u662f\u8077\u524d\u8a13\u7df4\uff0c\u4e0d\u63d0\u4f9b\u5728\u8077\u88dc\u52a9\u6216\u5728\u8077\u8a13\u7df4\u7684\u7d30\u7bc0\u89e3\u7b54\u3002"
+            "\u82e5\u8981\u67e5\u672c\u8ab2\u7a0b\uff0c\u53ef\u8a62\u554f\u300c\u8077\u524d\u88dc\u52a9\u8cc7\u683c\u300d\u3001\u300c\u9752\u5e74\u734e\u52f5\u91d1\u300d\u3001\u300c\u5831\u540d\u8cc7\u683c\u300d\u6216\u300c\u5831\u540d\u65b9\u5f0f\u300d\u3002"
+            "\n\n\u6ce8\u610f\u4e8b\u9805\uff1a\n"
+            + official_notice(category)
+        )
+
     text = "\n".join(match["content"] for match in matches[:4])
     if fallback_text:
         text = text + "\n" + fallback_text
@@ -251,6 +267,8 @@ def build_answer(question: str, category: str, matches: list[dict], fallback_tex
     sources = unique_sources(matches, category) if matches else [CATEGORY_LABELS.get(category, category)]
     direct = direct_answer(question, category, matches, fallback_text=fallback_text)
     if direct:
+        if category == "on-job-training":
+            sources = ["職前訓練定位"]
         return {
             "answer": direct,
             "category": category,
@@ -266,7 +284,7 @@ def build_answer(question: str, category: str, matches: list[dict], fallback_tex
             "\u7c21\u77ed\u56de\u7b54\uff1a\n"
             "\u76ee\u524d\u77e5\u8b58\u5eab\u6c92\u6709\u660e\u78ba\u8cc7\u6599\u3002\n\n"
             "\u8a73\u7d30\u8aaa\u660e\uff1a\n"
-            "\u5efa\u8b70\u67e5\u8a62\u53f0\u7063\u5c31\u696d\u901a\u3001\u8077\u524d\u8a13\u7df4\u7db2\u3001\u5728\u8077\u8a13\u7df4\u7db2\u6216\u6d3d\u8a62\u627f\u8fa6\u55ae\u4f4d\u3002\u570b\u7acb\u81fa\u5357\u5927\u5b78 AI \u64da\u9ede\u96fb\u8a71\uff1a06-213-0019\u3002\n\n"
+            "\u5efa\u8b70\u67e5\u8a62\u53f0\u7063\u5c31\u696d\u901a\u3001\u8077\u524d\u8a13\u7df4\u7db2\u6216\u6d3d\u8a62\u627f\u8fa6\u55ae\u4f4d\u3002\u570b\u7acb\u81fa\u5357\u5927\u5b78 AI \u64da\u9ede\u96fb\u8a71\uff1a06-213-0019\u3002\n\n"
             "\u4f86\u6e90\u4f9d\u64da\uff1a\n"
             "\u672a\u6aa2\u7d22\u5230\u8db3\u5920\u660e\u78ba\u7684\u77e5\u8b58\u5eab\u6bb5\u843d\u3002"
         )
