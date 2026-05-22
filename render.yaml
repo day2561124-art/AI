@@ -26,9 +26,8 @@ services:
 
 staticSites:
   - name: ai-customer-frontend
-    rootDir: frontend-react
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
+    buildCommand: cd frontend-react && npm install && npm run build
+    staticPublishPath: frontend-react/dist
     routes:
       - type: rewrite
         source: /*
