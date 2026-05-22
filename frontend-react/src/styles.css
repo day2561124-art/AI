@@ -553,6 +553,76 @@ input:focus {
   font-size: 14px;
 }
 
+.admin-section-heading {
+  margin-bottom: 18px;
+}
+
+.admin-section-heading span {
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-section-heading h2 {
+  margin: 5px 0 6px;
+  color: #172033;
+  font-size: 24px;
+}
+
+.admin-section-heading p {
+  margin: 0;
+  color: #617089;
+  line-height: 1.7;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.metric-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 112px;
+  border: 1px solid rgba(15, 118, 110, 0.16);
+  border-radius: 8px;
+  padding: 16px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(231, 245, 242, 0.84)),
+    repeating-linear-gradient(0deg, rgba(15, 118, 110, 0.05) 0 1px, transparent 1px 11px);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.07);
+}
+
+.metric-card::after {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: 42px;
+  height: 3px;
+  content: "";
+  background: linear-gradient(90deg, #0f766e, transparent);
+  opacity: 0.55;
+}
+
+.metric-card span {
+  display: block;
+  color: #617089;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.metric-card strong {
+  display: block;
+  margin-top: 12px;
+  color: #172033;
+  font-size: clamp(25px, 3vw, 38px);
+  line-height: 1;
+}
+
 .info-grid,
 .admin-grid,
 .timeline {
@@ -671,8 +741,10 @@ dd {
 }
 
 .record-item {
-  border-top: 1px solid #e2e8f0;
-  padding-top: 10px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 8px;
+  padding: 11px 12px;
+  background: rgba(248, 250, 252, 0.72);
 }
 
 .record-item strong,
@@ -683,6 +755,21 @@ dd {
 .record-item small {
   color: #64748b;
   margin-top: 4px;
+}
+
+.record-item p {
+  margin: 7px 0 0;
+  color: #40506a;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.feedback-record strong {
+  color: #0f766e;
+}
+
+.visit-record strong {
+  color: #0b5f73;
 }
 
 @media (max-width: 720px) {
@@ -719,10 +806,20 @@ dd {
     display: grid;
   }
 
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .info-grid,
   .admin-grid,
   .timeline {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1080px) {
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

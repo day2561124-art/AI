@@ -120,6 +120,7 @@ def reload_knowledge() -> dict:
 
 class ChatRequest(BaseModel):
     question: str
+    visitor_id: str | None = None
 
 
 class FeedbackRequest(BaseModel):
@@ -127,6 +128,15 @@ class FeedbackRequest(BaseModel):
     answer: str
     helpful: bool
     comment: str | None = None
+    visitor_id: str | None = None
+    conversation_id: str | None = None
+
+
+class VisitRequest(BaseModel):
+    visitor_id: str
+    page: str
+    path: str | None = None
+    referrer: str | None = None
 
 
 def require_admin(x_admin_token: str | None = Header(default=None)) -> None:
@@ -190,6 +200,7 @@ def chat(payload: ChatRequest) -> dict:
             "matched": response["matched"],
             "sources": response["sources"],
             "notice": response["notice"],
+            "visitor_id": payload.visitor_id,
         },
     )
     response["conversation_id"] = saved["id"]
@@ -237,12 +248,32 @@ def feedback(payload: FeedbackRequest) -> dict:
             "answer": payload.answer,
             "helpful": payload.helpful,
             "comment": payload.comment,
+            "visitor_id": payload.visitor_id,
+            "conversation_id": payload.conversation_id,
         },
     )
     return {
         "status": "received",
         "id": saved["id"],
         "message": "Feedback saved.",
+    }
+
+
+@app.post("/api/analytics/visit")
+def analytics_visit(payload: VisitRequest) -> dict:
+    saved = store.append(
+        "visits",
+        {
+            "visitor_id": payload.visitor_id,
+            "page": payload.page,
+            "path": payload.path,
+            "referrer": payload.referrer,
+        },
+    )
+    return {
+        "status": "tracked",
+        "id": saved["id"],
+        "visitor_visit_count": store.visitor_visit_count(payload.visitor_id),
     }
 
 
@@ -264,6 +295,11 @@ def admin_feedback(limit: int = 30, _: None = Depends(require_admin)) -> dict:
 @app.get("/api/admin/unanswered")
 def admin_unanswered(limit: int = 30, _: None = Depends(require_admin)) -> dict:
     return {"items": store.list("unanswered_questions", limit=limit)}
+
+
+@app.get("/api/admin/visits")
+def admin_visits(limit: int = 50, _: None = Depends(require_admin)) -> dict:
+    return {"items": store.list("visits", limit=limit)}
 
 
 @app.post("/api/admin/knowledge/reload")

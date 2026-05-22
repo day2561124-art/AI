@@ -49,11 +49,28 @@ class JsonStore:
         chat_logs = self._read("chat_logs")
         feedback = self._read("feedback")
         unanswered = self._read("unanswered_questions")
+        visits = self._read("visits")
+        visitor_counts: dict[str, int] = {}
+        for visit in visits:
+            visitor_id = visit.get("visitor_id") or "unknown"
+            visitor_counts[visitor_id] = visitor_counts.get(visitor_id, 0) + 1
+
+        helpful_count = sum(1 for item in feedback if item.get("helpful") is True)
+        not_helpful_count = sum(1 for item in feedback if item.get("helpful") is False)
+        total_feedback = len(feedback)
         return {
             "chat_count": len(chat_logs),
-            "feedback_count": len(feedback),
+            "visit_count": len(visits),
+            "unique_visitor_count": len(visitor_counts),
+            "repeat_visit_count": sum(max(count - 1, 0) for count in visitor_counts.values()),
+            "repeat_visitor_count": sum(1 for count in visitor_counts.values() if count > 1),
+            "feedback_count": total_feedback,
             "unanswered_count": len(unanswered),
-            "helpful_count": sum(1 for item in feedback if item.get("helpful") is True),
-            "not_helpful_count": sum(1 for item in feedback if item.get("helpful") is False),
+            "helpful_count": helpful_count,
+            "not_helpful_count": not_helpful_count,
+            "helpful_rate": round((helpful_count / total_feedback) * 100, 1) if total_feedback else 0,
         }
 
+    def visitor_visit_count(self, visitor_id: str) -> int:
+        visits = self._read("visits")
+        return sum(1 for visit in visits if visit.get("visitor_id") == visitor_id)

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Intro } from "../components/Intro";
 import { RecordList } from "../components/RecordList";
 import {
@@ -6,6 +6,7 @@ import {
   getChatLogs,
   getFeedback,
   getUnanswered,
+  getVisits,
   reloadKnowledge,
   uploadKnowledge,
 } from "../services/api";
@@ -19,6 +20,7 @@ export function AdminPage() {
   const [chatLogs, setChatLogs] = useState([]);
   const [feedback, setFeedback] = useState([]);
   const [unanswered, setUnanswered] = useState([]);
+  const [visits, setVisits] = useState([]);
   const [knowledgeFile, setKnowledgeFile] = useState(null);
   const [knowledgeStatus, setKnowledgeStatus] = useState("");
   const [error, setError] = useState("");
@@ -27,21 +29,24 @@ export function AdminPage() {
     if (!activeToken) return;
     setError("");
     try {
-      const [statsData, logsData, feedbackData, unansweredData] = await Promise.all([
+      const [statsData, logsData, feedbackData, unansweredData, visitsData] = await Promise.all([
         getAdminStats(activeToken),
         getChatLogs(activeToken),
         getFeedback(activeToken),
         getUnanswered(activeToken),
+        getVisits(activeToken),
       ]);
       setStats(statsData);
       setChatLogs(logsData.items || []);
       setFeedback(feedbackData.items || []);
       setUnanswered(unansweredData.items || []);
+      setVisits(visitsData.items || []);
     } catch {
       setStats(null);
       setChatLogs([]);
       setFeedback([]);
       setUnanswered([]);
+      setVisits([]);
       setError("管理 token 無效，或後端 API 尚未啟動。");
     }
   }
@@ -66,6 +71,7 @@ export function AdminPage() {
     setChatLogs([]);
     setFeedback([]);
     setUnanswered([]);
+    setVisits([]);
     setKnowledgeStatus("");
     setError("");
   }
@@ -96,12 +102,26 @@ export function AdminPage() {
     }
   }
 
-  const statItems = useMemo(() => Object.entries(stats || {}), [stats]);
+  const statCards = useMemo(
+    () => [
+      ["總瀏覽次數", stats?.visit_count ?? 0],
+      ["不重複訪客", stats?.unique_visitor_count ?? 0],
+      ["重複瀏覽次數", stats?.repeat_visit_count ?? 0],
+      ["重複訪客數", stats?.repeat_visitor_count ?? 0],
+      ["問答次數", stats?.chat_count ?? 0],
+      ["回饋總數", stats?.feedback_count ?? 0],
+      ["有幫助", stats?.helpful_count ?? 0],
+      ["沒幫助", stats?.not_helpful_count ?? 0],
+      ["有幫助比例", `${stats?.helpful_rate ?? 0}%`],
+      ["無法回答", stats?.unanswered_count ?? 0],
+    ],
+    [stats],
+  );
 
   return (
     <>
-      <Intro eyebrow="管理後台" title="問答紀錄、回饋與知識庫管理">
-        查看問答紀錄、使用者回饋、無法回答問題，並可上傳新的 TXT 知識庫重新建立檢索資料。
+      <Intro eyebrow="工作人員後台" title="服務成效與知識庫管理">
+        追蹤瀏覽人數、重複瀏覽、問答紀錄、使用者回饋與無法回答問題，並管理客服知識庫。
       </Intro>
 
       <section className="chat-panel admin-login">
@@ -125,7 +145,11 @@ export function AdminPage() {
       {token && stats && (
         <>
           <section className="chat-panel knowledge-tools">
-            <h2>知識庫管理</h2>
+            <div className="admin-section-heading">
+              <span>Knowledge Base</span>
+              <h2>知識庫管理</h2>
+              <p>更新 TXT 知識庫後，系統會重新建立檢索資料，讓 AI 回答使用最新內容。</p>
+            </div>
             <form className="chat-form" onSubmit={handleUpload}>
               <label htmlFor="knowledgeFile">上傳新的 TXT 知識庫</label>
               <input
@@ -142,15 +166,24 @@ export function AdminPage() {
             {knowledgeStatus && <p className="feedback-status">{knowledgeStatus}</p>}
           </section>
 
+          <section className="metric-grid">
+            {statCards.map(([label, value]) => (
+              <article className="metric-card" key={label}>
+                <span>{label}</span>
+                <strong>{value}</strong>
+              </article>
+            ))}
+          </section>
+
           <section className="admin-grid">
-            <AdminCard title="統計">
-              <dl>{statItems.map(([key, value]) => <React.Fragment key={key}><dt>{key}</dt><dd>{String(value)}</dd></React.Fragment>)}</dl>
+            <AdminCard title="瀏覽紀錄">
+              <VisitList rows={visits} />
             </AdminCard>
             <AdminCard title="無法回答">
               <RecordList rows={unanswered} emptyText="目前沒有無法回答問題。" />
             </AdminCard>
             <AdminCard title="使用者回饋">
-              <RecordList rows={feedback} emptyText="目前沒有回饋。" />
+              <FeedbackList rows={feedback} />
             </AdminCard>
             <AdminCard title="最新問答紀錄">
               <RecordList rows={chatLogs} emptyText="目前沒有問答紀錄。" />
@@ -164,4 +197,60 @@ export function AdminPage() {
 
 function AdminCard({ title, children }) {
   return <article><h2>{title}</h2>{children}</article>;
+}
+
+function formatTime(value) {
+  if (!value) return "";
+  return new Date(value).toLocaleString("zh-TW", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function shortId(value = "") {
+  return value ? value.slice(0, 8) : "unknown";
+}
+
+function FeedbackList({ rows }) {
+  if (!rows.length) return <p>目前沒有回饋。</p>;
+  return (
+    <div className="record-list">
+      {rows.map((row) => (
+        <div className="record-item feedback-record" key={row.id}>
+          <strong>{row.helpful ? "有幫助" : "沒幫助"}</strong>
+          <small>{formatTime(row.created_at)} ｜ 訪客 {shortId(row.visitor_id)}</small>
+          <p>{row.question}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function VisitList({ rows }) {
+  if (!rows.length) return <p>目前沒有瀏覽紀錄。</p>;
+  return (
+    <div className="record-list">
+      {rows.map((row) => (
+        <div className="record-item visit-record" key={row.id}>
+          <strong>{routeLabel(row.page)}</strong>
+          <small>{formatTime(row.created_at)} ｜ 訪客 {shortId(row.visitor_id)}</small>
+          <p>{row.path}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function routeLabel(route) {
+  const labels = {
+    chat: "AI 問答",
+    courses: "課程資訊",
+    faq: "FAQ",
+    process: "報名流程",
+    contact: "聯絡資訊",
+    admin: "管理後台",
+  };
+  return labels[route] || route || "未知頁面";
 }

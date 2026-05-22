@@ -47,6 +47,7 @@ export function ChatPage() {
         question,
         answer: answer.answer,
         helpful,
+        conversation_id: answer.conversation_id,
         comment: null,
       });
       setFeedbackStatus(helpful ? "已儲存有幫助回饋。" : "已儲存沒幫助回饋。");
