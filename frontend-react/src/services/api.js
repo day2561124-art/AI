@@ -28,6 +28,10 @@ export function askQuestion(question) {
   });
 }
 
+export function getPublicChatHistory(limit = 30) {
+  return request(`/api/chat-history?limit=${limit}`);
+}
+
 export function sendFeedback(payload) {
   return request("/api/feedback", {
     method: "POST",

@@ -373,6 +373,23 @@ def faqs() -> dict:
     }
 
 
+@app.get("/api/chat-history")
+def public_chat_history(limit: int = 30) -> dict:
+    safe_limit = min(max(limit, 1), 100)
+    items = []
+    for row in store.list("chat_logs", limit=safe_limit):
+        items.append(
+            {
+                "id": row.get("id"),
+                "created_at": row.get("created_at"),
+                "question": row.get("question"),
+                "category_label": row.get("category_label"),
+                "matched": row.get("matched"),
+            }
+        )
+    return {"items": items}
+
+
 @app.post("/api/feedback")
 def feedback(payload: FeedbackRequest) -> dict:
     saved = store.append(
