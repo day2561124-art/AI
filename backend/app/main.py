@@ -306,7 +306,22 @@ def chat(payload: ChatRequest) -> dict:
     asks_deadline = category == "registration" and any(
         keyword in question for keyword in ["\u622a\u6b62", "\u5831\u540d\u622a\u6b62", "\u4ec0\u9ebc\u6642\u5019"]
     )
-    use_llm = response.get("answer_style") != "direct" and not asks_deadline
+    asks_hard_fact = asks_deadline or any(
+        keyword in question
+        for keyword in [
+            "\u96fb\u8a71",
+            "\u806f\u7d61",
+            "LINE",
+            "line",
+            "\u5730\u9ede",
+            "\u8a13\u7df4\u5730\u9ede",
+            "\u4e0a\u8ab2",
+            "\u6642\u6578",
+            "\u7e3d\u6642\u6578",
+            "\u591a\u5c11\u5c0f\u6642",
+        ]
+    )
+    use_llm = category != "on-job-training" and not asks_hard_fact
     llm_answer = (
         generate_llm_answer(
             question,
