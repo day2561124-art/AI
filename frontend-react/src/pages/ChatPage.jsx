@@ -61,7 +61,13 @@ export function ChatPage() {
     setLoading(true);
     setFeedbackStatus("");
     try {
-      const response = await askQuestion(currentQuestion);
+      const recentHistory = messages
+        .slice(-8)
+        .map((message) => ({
+          role: message.role,
+          text: cleanAnswerText(message.text),
+        }));
+      const response = await askQuestion(currentQuestion, recentHistory);
       setMessages((current) => [
         ...current,
         {

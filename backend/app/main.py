@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.rag.loader import load_knowledge_base
 from app.rag.retriever import LocalRetriever
@@ -109,6 +109,61 @@ def include_both_terms(question: str, category: str, matches: list[dict]) -> lis
     return enriched[:7]
 
 
+def is_casual_chat(question: str) -> bool:
+    compact = question.strip().lower().replace(" ", "")
+    course_terms = [
+        "\u5831\u540d",
+        "\u88dc\u52a9",
+        "\u734e\u52f5\u91d1",
+        "\u7504\u8a66",
+        "\u8ab2\u7a0b",
+        "\u4e0a\u8ab2",
+        "\u6642\u6578",
+        "\u5730\u9ede",
+        "\u806f\u7d61",
+        "\u96fb\u8a71",
+        "line",
+        "114",
+        "115",
+        "\u8cc7\u683c",
+        "\u8077\u524d",
+    ]
+    if any(term in compact for term in course_terms):
+        return False
+
+    casual_terms = [
+        "hi",
+        "hello",
+        "hey",
+        "ok",
+        "\u4f60\u597d",
+        "\u55e8",
+        "\u65e9\u5b89",
+        "\u5348\u5b89",
+        "\u665a\u5b89",
+        "\u8b1d\u8b1d",
+        "\u611f\u8b1d",
+        "\u8b1d\u5566",
+        "\u4f60\u662f\u8ab0",
+        "\u4f60\u53ef\u4ee5\u505a\u4ec0\u9ebc",
+        "\u53ef\u4ee5\u5e6b\u6211",
+        "\u6211\u60f3\u554f",
+        "\u597d\u7684",
+        "\u597d\u5594",
+        "\u597d\u55ce",
+    ]
+    return len(compact) <= 40 and any(term in compact for term in casual_terms)
+
+
+def casual_fallback_answer(question: str) -> str:
+    compact = question.strip().lower().replace(" ", "")
+    if any(term in compact for term in ["\u8b1d\u8b1d", "\u611f\u8b1d", "\u8b1d\u5566"]):
+        return "\u4e0d\u5ba2\u6c23\uff5e\u5f88\u958b\u5fc3\u80fd\u5e6b\u4e0a\u5fd9 😊 \u5982\u679c\u4f60\u9084\u60f3\u67e5\u5831\u540d\u3001\u88dc\u52a9\u3001\u7504\u8a66\u6216\u806f\u7d61\u65b9\u5f0f\uff0c\u90fd\u53ef\u4ee5\u76f4\u63a5\u554f\u6211\u3002"
+    if "\u4f60\u662f\u8ab0" in compact or "\u53ef\u4ee5\u505a\u4ec0\u9ebc" in compact:
+        return "\u6211\u662f AI\u667a\u6167\u61c9\u7528\u7522\u696d\u4eba\u624d\u57f9\u8a13\u73ed\u7684\u5ba2\u670d\u52a9\u7406 😊 \u53ef\u4ee5\u5e6b\u4f60\u67e5\u8ab2\u7a0b\u5167\u5bb9\u3001\u5831\u540d\u65b9\u5f0f\u3001\u88dc\u52a9\u8cc7\u683c\u3001\u9752\u5e74\u734e\u52f5\u91d1\u3001\u7504\u8a66\u8cc7\u8a0a\u548c\u806f\u7d61\u7ba1\u9053\u3002"
+    return "\u4f60\u597d\uff5e\u6211\u5728\u9019\u88e1 😊 \u4f60\u53ef\u4ee5\u76f4\u63a5\u554f\u6211\u95dc\u65bc AI\u667a\u6167\u61c9\u7528\u7522\u696d\u4eba\u624d\u57f9\u8a13\u73ed\u7684\u8ab2\u7a0b\u3001\u5831\u540d\u3001\u88dc\u52a9\u3001\u7504\u8a66\u6216\u806f\u7d61\u8cc7\u8a0a\u3002"
+
+
 def reload_knowledge() -> dict:
     global chunks, retriever
     chunks = load_knowledge_base(KNOWLEDGE_PATH)
@@ -123,6 +178,7 @@ def reload_knowledge() -> dict:
 class ChatRequest(BaseModel):
     question: str
     visitor_id: str | None = None
+    history: list[dict] = Field(default_factory=list)
 
 
 class FeedbackRequest(BaseModel):
@@ -298,6 +354,50 @@ def knowledge_status() -> dict:
 @app.post("/api/chat")
 def chat(payload: ChatRequest) -> dict:
     question = payload.question.strip()
+    conversation = [
+        {
+            "role": item.get("role", "user"),
+            "text": str(item.get("text", ""))[:500],
+        }
+        for item in payload.history[-8:]
+        if isinstance(item, dict) and item.get("text")
+    ]
+
+    if is_casual_chat(question):
+        llm_answer = generate_llm_answer(
+            question,
+            "casual",
+            [],
+            [],
+            full_knowledge="\n".join(chunk.content for chunk in chunks),
+            conversation=conversation,
+        )
+        response = {
+            "answer": llm_answer or casual_fallback_answer(question),
+            "category": "casual",
+            "category_label": "\u4e00\u822c\u804a\u5929",
+            "sources": [],
+            "notice": "\u82e5\u8981\u67e5\u8ab2\u7a0b\u3001\u5831\u540d\u3001\u88dc\u52a9\u6216\u7504\u8a66\u8cc7\u8a0a\uff0c\u6211\u6703\u4ee5\u77e5\u8b58\u5eab\u8207\u5b98\u65b9\u516c\u544a\u70ba\u4f9d\u64da\u5354\u52a9\u4f60\u3002",
+            "matched": True,
+            "answer_style": "chat",
+            "llm_used": bool(llm_answer),
+        }
+        saved = store.append(
+            "chat_logs",
+            {
+                "question": question,
+                "answer": response["answer"],
+                "category": response["category"],
+                "category_label": response["category_label"],
+                "matched": response["matched"],
+                "sources": response["sources"],
+                "notice": response["notice"],
+                "visitor_id": payload.visitor_id,
+            },
+        )
+        response["conversation_id"] = saved["id"]
+        return response
+
     category = classify_question(question)
     matches = retriever.search(question, top_k=5, category=category)
     matches = include_both_terms(question, category, matches)
@@ -329,6 +429,7 @@ def chat(payload: ChatRequest) -> dict:
             matches,
             response["sources"],
             full_knowledge=fallback_text,
+            conversation=conversation,
         )
         if use_llm
         else None

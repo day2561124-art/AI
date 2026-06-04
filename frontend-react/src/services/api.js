@@ -20,11 +20,11 @@ async function request(path, options = {}) {
   return response.json();
 }
 
-export function askQuestion(question) {
+export function askQuestion(question, history = []) {
   return request("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question, visitor_id: getVisitorId() }),
+    body: JSON.stringify({ question, visitor_id: getVisitorId(), history }),
   });
 }
 

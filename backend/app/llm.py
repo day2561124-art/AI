@@ -18,6 +18,7 @@ def build_llm_prompt(
     matches: list[dict],
     sources: list[str],
     full_knowledge: str = "",
+    conversation: list[dict] | None = None,
 ) -> str:
     category_label = CATEGORY_LABELS.get(category, category)
     retrieved_blocks = []
@@ -31,8 +32,16 @@ def build_llm_prompt(
     if len(knowledge_text) > MAX_FULL_KNOWLEDGE_CHARS:
         knowledge_text = knowledge_text[:MAX_FULL_KNOWLEDGE_CHARS].rstrip()
 
+    recent_conversation = "\n".join(
+        f"{item.get('role', 'user')}: {item.get('text', '')[:500]}"
+        for item in (conversation or [])[-8:]
+        if item.get("text")
+    )
+
     return (
         "你是「AI智慧應用產業人才培訓班」客服助理。你可以使用整份知識庫回答問題。\n"
+        "你也可以和使用者自然聊天，但你的身份仍是這個課程網站的客服助理。\n"
+        "若使用者只是打招呼、道謝、閒聊、追問上一則回答，請根據最近對話自然回應；若涉及課程資訊，必須回到知識庫內容。\n"
         "請先在心中自行檢索整份知識庫，找出最相關的段落，再用自然、人情味的方式整理給使用者；不要把檢索過程說出來。\n"
         "優先相關片段只是輔助線索，不一定完整；若整份知識庫有更明確或更完整的答案，請以整份知識庫為準。\n"
         "回答原則：\n"
@@ -47,7 +56,10 @@ def build_llm_prompt(
         "9. 若問題未指定期別，且知識庫同時有 114 年第 01 期與 115 年第 02 期資料，請同時整理兩期答案，避免只引用單一期別。\n"
         "10. 本系統只服務職前訓練課程；若使用者詢問在職訓練或在職補助，請簡短說明不在本系統回答範圍，並引導改問職前補助、報名資格或青年獎勵金。\n"
         "11. 來源與注意事項由系統畫面另行呈現，回答正文不要自行加入「來源依據」或「注意事項」標題。\n\n"
-        f"使用者問題：{question}\n"
+        "最近對話：\n"
+        + (recent_conversation if recent_conversation else "無\n")
+        + "\n\n"
+        f"使用者最新訊息：{question}\n"
         f"判定類別：{category_label}\n\n"
         "優先相關片段：\n"
         + ("\n\n".join(retrieved_blocks) if retrieved_blocks else "無特別命中的片段，請改用整份知識庫判斷。")
@@ -64,6 +76,7 @@ def generate_llm_answer(
     matches: list[dict],
     sources: list[str],
     full_knowledge: str = "",
+    conversation: list[dict] | None = None,
 ) -> str | None:
     if not llm_enabled() or not full_knowledge.strip():
         return None
@@ -86,6 +99,7 @@ def generate_llm_answer(
                 matches=matches,
                 sources=sources,
                 full_knowledge=full_knowledge,
+                conversation=conversation,
             ),
         )
         text = response.output_text.strip()
