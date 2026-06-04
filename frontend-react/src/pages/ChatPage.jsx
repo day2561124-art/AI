@@ -18,7 +18,7 @@ export function ChatPage() {
     {
       id: "welcome",
       role: "assistant",
-      text: "您好，我可以協助查詢 AI智慧應用產業人才培訓班的課程、報名、補助、甄試與聯絡資訊。",
+      text: "您好～我可以陪你一起查 AI智慧應用產業人才培訓班的課程、報名、補助、甄試與聯絡資訊 😊",
       sources: ["整合知識庫"],
       notice: "實際資訊仍以官方最新公告與承辦單位回覆為準。",
     },
