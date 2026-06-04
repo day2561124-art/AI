@@ -298,16 +298,9 @@ def build_answer(question: str, category: str, matches: list[dict], fallback_tex
             "matched": False,
         }
 
-    detail_items = [f"- {excerpt(match['content'], limit=180)}" for match in matches[:2]]
     answer = (
         "\u7c21\u77ed\u56de\u7b54\uff1a\n"
         + brief_answer(category, matches)
-        + "\n\n\u91cd\u9ede\u8cc7\u8a0a\uff1a\n"
-        + "\n\n".join(detail_items)
-        + "\n\n\u4f86\u6e90\u4f9d\u64da\uff1a\n"
-        + "\n".join(f"- {source}" for source in sources)
-        + "\n\n\u6ce8\u610f\u4e8b\u9805\uff1a\n"
-        + official_notice(category)
     )
 
     return {

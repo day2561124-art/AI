@@ -119,7 +119,11 @@ def is_casual_chat(question: str) -> bool:
         "\u8ab2\u7a0b",
         "\u4e0a\u8ab2",
         "\u6642\u6578",
+        "\u6642\u9593",
+        "\u8cbb\u7528",
+        "\u5b78\u8cbb",
         "\u5730\u9ede",
+        "\u5730\u5740",
         "\u806f\u7d61",
         "\u96fb\u8a71",
         "line",
@@ -127,6 +131,16 @@ def is_casual_chat(question: str) -> bool:
         "115",
         "\u8cc7\u683c",
         "\u8077\u524d",
+        "\u9752\u5e74",
+        "\u540d\u984d",
+        "\u622a\u6b62",
+        "\u671f\u9650",
+        "\u958b\u8ab2",
+        "\u7d50\u8a13",
+        "\u7db2\u7ad9",
+        "\u7db2\u5740",
+        "\u4ea4\u901a",
+        "\u9910",
     ]
     if any(term in compact for term in course_terms):
         return False
@@ -136,8 +150,12 @@ def is_casual_chat(question: str) -> bool:
         "hello",
         "hey",
         "ok",
+        "okay",
         "\u4f60\u597d",
         "\u55e8",
+        "\u54c8\u56c9",
+        "\u54c8\u54c8",
+        "\u5728\u55ce",
         "\u65e9\u5b89",
         "\u5348\u5b89",
         "\u665a\u5b89",
@@ -151,17 +169,39 @@ def is_casual_chat(question: str) -> bool:
         "\u597d\u7684",
         "\u597d\u5594",
         "\u597d\u55ce",
+        "\u4e86\u89e3",
+        "\u6536\u5230",
+        "\u8f9b\u82e6\u4e86",
+        "\u4f60\u771f\u68d2",
+        "\u4e0d\u61c2",
+        "\u770b\u4e0d\u61c2",
+        "\u518d\u8aaa\u4e00\u6b21",
+        "\u9084\u6709\u55ce",
+        "\u7136\u5f8c\u5462",
+        "\u4e0d\u597d\u610f\u601d",
+        "\u6c92\u4e8b",
+        "\u63b0\u63b0",
+        "bye",
     ]
-    return len(compact) <= 40 and any(term in compact for term in casual_terms)
+    if len(compact) <= 40 and any(term in compact for term in casual_terms):
+        return True
+
+    return len(compact) <= 8 and not any(char.isdigit() for char in compact)
 
 
 def casual_fallback_answer(question: str) -> str:
     compact = question.strip().lower().replace(" ", "")
     if any(term in compact for term in ["\u8b1d\u8b1d", "\u611f\u8b1d", "\u8b1d\u5566"]):
-        return "\u4e0d\u5ba2\u6c23\uff5e\u5f88\u958b\u5fc3\u80fd\u5e6b\u4e0a\u5fd9 😊 \u5982\u679c\u4f60\u9084\u60f3\u67e5\u5831\u540d\u3001\u88dc\u52a9\u3001\u7504\u8a66\u6216\u806f\u7d61\u65b9\u5f0f\uff0c\u90fd\u53ef\u4ee5\u76f4\u63a5\u554f\u6211\u3002"
+        return "\u4e0d\u5ba2\u6c23\uff5e\u5f88\u958b\u5fc3\u5e6b\u4e0a\u5fd9 😊"
+    if any(term in compact for term in ["\u54c8\u54c8", "\u4f60\u771f\u68d2", "\u8f9b\u82e6\u4e86"]):
+        return "\u54c8\u54c8\uff0c\u8b1d\u8b1d\u4f60\uff5e\u6211\u6703\u7e7c\u7e8c\u5e6b\u4f60\u628a\u8cc7\u8a0a\u627e\u6e05\u695a 😊"
+    if any(term in compact for term in ["\u4e0d\u61c2", "\u770b\u4e0d\u61c2", "\u518d\u8aaa\u4e00\u6b21", "\u9084\u6709\u55ce", "\u7136\u5f8c\u5462"]):
+        return "\u53ef\u4ee5\u7684\uff5e\u4f60\u53ef\u4ee5\u544a\u8a34\u6211\u54ea\u4e00\u6bb5\u4e0d\u6e05\u695a\uff0c\u6211\u6703\u7528\u66f4\u7c21\u55ae\u7684\u65b9\u5f0f\u8aaa\u660e 😊"
+    if any(term in compact for term in ["bye", "\u63b0\u63b0", "\u665a\u5b89"]):
+        return "\u597d\u7684\uff5e\u6709\u9700\u8981\u518d\u4f86\u554f\u6211\uff0c\u795d\u4f60\u9806\u5229 😊"
     if "\u4f60\u662f\u8ab0" in compact or "\u53ef\u4ee5\u505a\u4ec0\u9ebc" in compact:
-        return "\u6211\u662f AI\u667a\u6167\u61c9\u7528\u7522\u696d\u4eba\u624d\u57f9\u8a13\u73ed\u7684\u5ba2\u670d\u52a9\u7406 😊 \u53ef\u4ee5\u5e6b\u4f60\u67e5\u8ab2\u7a0b\u5167\u5bb9\u3001\u5831\u540d\u65b9\u5f0f\u3001\u88dc\u52a9\u8cc7\u683c\u3001\u9752\u5e74\u734e\u52f5\u91d1\u3001\u7504\u8a66\u8cc7\u8a0a\u548c\u806f\u7d61\u7ba1\u9053\u3002"
-    return "\u4f60\u597d\uff5e\u6211\u5728\u9019\u88e1 😊 \u4f60\u53ef\u4ee5\u76f4\u63a5\u554f\u6211\u95dc\u65bc AI\u667a\u6167\u61c9\u7528\u7522\u696d\u4eba\u624d\u57f9\u8a13\u73ed\u7684\u8ab2\u7a0b\u3001\u5831\u540d\u3001\u88dc\u52a9\u3001\u7504\u8a66\u6216\u806f\u7d61\u8cc7\u8a0a\u3002"
+        return "\u6211\u662f\u9019\u500b\u8ab2\u7a0b\u7684 AI \u5ba2\u670d\u52a9\u7406 😊 \u53ef\u4ee5\u5e6b\u4f60\u67e5\u5831\u540d\u3001\u88dc\u52a9\u3001\u7504\u8a66\u548c\u806f\u7d61\u8cc7\u8a0a\u3002"
+    return "\u4f60\u597d\uff5e\u6211\u5728 😊 \u60f3\u67e5\u5831\u540d\u3001\u88dc\u52a9\u3001\u7504\u8a66\u6216\u806f\u7d61\u65b9\u5f0f\u90fd\u53ef\u4ee5\u554f\u6211\u3002"
 
 
 def reload_knowledge() -> dict:
