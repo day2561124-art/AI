@@ -45,6 +45,9 @@ class JsonStore:
         rows = self._read(name)
         return list(reversed(rows))[:limit]
 
+    def all(self, name: str) -> list[dict]:
+        return self._read(name)
+
     def stats(self) -> dict:
         chat_logs = self._read("chat_logs")
         feedback = self._read("feedback")
@@ -58,6 +61,10 @@ class JsonStore:
         helpful_count = sum(1 for item in feedback if item.get("helpful") is True)
         not_helpful_count = sum(1 for item in feedback if item.get("helpful") is False)
         total_feedback = len(feedback)
+        cag_count = sum(1 for item in chat_logs if item.get("answer_mode") == "CAG")
+        rag_count = sum(1 for item in chat_logs if item.get("answer_mode") in {"RAG", "RAG+LLM"})
+        memory_count = sum(1 for item in chat_logs if item.get("memory_used") is True)
+        llm_count = sum(1 for item in chat_logs if item.get("llm_used") is True)
         return {
             "chat_count": len(chat_logs),
             "visit_count": len(visits),
@@ -69,6 +76,10 @@ class JsonStore:
             "helpful_count": helpful_count,
             "not_helpful_count": not_helpful_count,
             "helpful_rate": round((helpful_count / total_feedback) * 100, 1) if total_feedback else 0,
+            "cag_count": cag_count,
+            "rag_count": rag_count,
+            "memory_count": memory_count,
+            "llm_count": llm_count,
         }
 
     def visitor_visit_count(self, visitor_id: str) -> int:

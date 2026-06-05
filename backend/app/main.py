@@ -12,6 +12,7 @@ from app.rag.loader import load_knowledge_base
 from app.rag.retriever import LocalRetriever
 from app.rag.safety import build_answer, classify_question
 from app.llm import generate_llm_answer, llm_enabled
+from app.learning import build_feedback_context, build_visitor_memory, find_cag_answer
 from app.storage import JsonStore
 
 
@@ -388,12 +389,18 @@ def knowledge_status() -> dict:
         "chunk_count": len(chunks),
         "retriever": "local-hybrid-tfidf",
         "llm_enabled": llm_enabled(),
+        "architecture": "CAG / RAG + Feedback Learning Loop + Memory",
     }
 
 
 @app.post("/api/chat")
 def chat(payload: ChatRequest) -> dict:
     question = payload.question.strip()
+    feedback_rows = store.all("feedback")
+    chat_rows = store.all("chat_logs")
+    visitor_memory = build_visitor_memory(payload.visitor_id, chat_rows)
+    memory_context = visitor_memory["summary"]
+    memory_items = visitor_memory["items"]
     conversation = [
         {
             "role": item.get("role", "user"),
@@ -402,8 +409,37 @@ def chat(payload: ChatRequest) -> dict:
         for item in payload.history[-8:]
         if isinstance(item, dict) and item.get("text")
     ]
+    if memory_items:
+        conversation = [*memory_items, *conversation][-10:]
+
+    category = classify_question(question)
+    cag_response = find_cag_answer(question, category, feedback_rows)
+    if cag_response:
+        saved = store.append(
+            "chat_logs",
+            {
+                "question": question,
+                "answer": cag_response["answer"],
+                "category": cag_response["category"],
+                "category_label": cag_response["category_label"],
+                "matched": cag_response["matched"],
+                "sources": cag_response["sources"],
+                "notice": cag_response["notice"],
+                "visitor_id": payload.visitor_id,
+                "answer_mode": cag_response["answer_mode"],
+                "llm_used": False,
+                "memory_used": bool(memory_context),
+                "feedback_learning_used": True,
+                "cag_score": cag_response["cag_score"],
+            },
+        )
+        cag_response["conversation_id"] = saved["id"]
+        cag_response["memory_used"] = bool(memory_context)
+        cag_response["feedback_learning_used"] = True
+        return cag_response
 
     if is_casual_chat(question):
+        feedback_context = build_feedback_context(question, feedback_rows)
         llm_answer = generate_llm_answer(
             question,
             "casual",
@@ -411,6 +447,8 @@ def chat(payload: ChatRequest) -> dict:
             [],
             full_knowledge="\n".join(chunk.content for chunk in chunks),
             conversation=conversation,
+            feedback_context=feedback_context,
+            memory_context=memory_context,
         )
         response = {
             "answer": llm_answer or casual_fallback_answer(question),
@@ -421,6 +459,9 @@ def chat(payload: ChatRequest) -> dict:
             "matched": True,
             "answer_style": "chat",
             "llm_used": bool(llm_answer),
+            "answer_mode": "Memory+LLM" if llm_answer else "Memory",
+            "memory_used": bool(memory_context),
+            "feedback_learning_used": bool(feedback_context),
         }
         saved = store.append(
             "chat_logs",
@@ -433,16 +474,20 @@ def chat(payload: ChatRequest) -> dict:
                 "sources": response["sources"],
                 "notice": response["notice"],
                 "visitor_id": payload.visitor_id,
+                "answer_mode": response["answer_mode"],
+                "llm_used": response["llm_used"],
+                "memory_used": response["memory_used"],
+                "feedback_learning_used": response["feedback_learning_used"],
             },
         )
         response["conversation_id"] = saved["id"]
         return response
 
-    category = classify_question(question)
     matches = retriever.search(question, top_k=5, category=category)
     matches = include_both_terms(question, category, matches)
     fallback_text = "\n".join(chunk.content for chunk in chunks)
     response = build_answer(question, category, matches, fallback_text=fallback_text)
+    feedback_context = build_feedback_context(question, feedback_rows)
     asks_deadline = category == "registration" and any(
         keyword in question for keyword in ["\u622a\u6b62", "\u5831\u540d\u622a\u6b62", "\u4ec0\u9ebc\u6642\u5019"]
     )
@@ -470,11 +515,16 @@ def chat(payload: ChatRequest) -> dict:
             response["sources"],
             full_knowledge=fallback_text,
             conversation=conversation,
+            feedback_context=feedback_context,
+            memory_context=memory_context,
         )
         if use_llm
         else None
     )
     response["llm_used"] = bool(llm_answer)
+    response["answer_mode"] = "RAG+LLM" if llm_answer else "RAG"
+    response["memory_used"] = bool(memory_context)
+    response["feedback_learning_used"] = bool(feedback_context)
     if llm_answer:
         response["answer"] = llm_answer
         response["matched"] = True
@@ -491,6 +541,10 @@ def chat(payload: ChatRequest) -> dict:
             "sources": response["sources"],
             "notice": response["notice"],
             "visitor_id": payload.visitor_id,
+            "answer_mode": response["answer_mode"],
+            "llm_used": response["llm_used"],
+            "memory_used": response["memory_used"],
+            "feedback_learning_used": response["feedback_learning_used"],
         },
     )
     response["conversation_id"] = saved["id"]

@@ -19,6 +19,8 @@ def build_llm_prompt(
     sources: list[str],
     full_knowledge: str = "",
     conversation: list[dict] | None = None,
+    feedback_context: str = "",
+    memory_context: str = "",
 ) -> str:
     category_label = CATEGORY_LABELS.get(category, category)
     retrieved_blocks = []
@@ -42,6 +44,7 @@ def build_llm_prompt(
         "你是「AI智慧應用產業人才培訓班」客服助理。你可以使用整份知識庫回答問題。\n"
         "你也可以和使用者自然聊天，但你的身份仍是這個課程網站的客服助理。\n"
         "若使用者只是打招呼、道謝、閒聊、追問上一則回答，請根據最近對話自然回應；若涉及課程資訊，必須回到知識庫內容。\n"
+        "系統採用 CAG / RAG + Feedback Learning Loop + Memory：CAG 命中時優先使用已驗證答案，RAG 提供知識庫片段，Feedback 用來修正語氣與避開不佳回答，Memory 用來理解同一位使用者的上下文。\n"
         "請先在心中自行檢索整份知識庫，找出最相關的段落，再用自然、人情味的方式整理給使用者；不要把檢索過程說出來。\n"
         "優先相關片段只是輔助線索，不一定完整；若整份知識庫有更明確或更完整的答案，請以整份知識庫為準。\n"
         "回答原則：\n"
@@ -59,6 +62,10 @@ def build_llm_prompt(
         "12. 如果使用者是在閒聊、稱讚、道謝、說看不懂或要求再說一次，請像真人客服一樣短短回應，不要引用知識庫。\n\n"
         "最近對話：\n"
         + (recent_conversation if recent_conversation else "無\n")
+        + "\n\n使用者記憶：\n"
+        + (memory_context.strip() if memory_context.strip() else "無")
+        + "\n\n回饋學習：\n"
+        + (feedback_context.strip() if feedback_context.strip() else "無")
         + "\n\n"
         f"使用者最新訊息：{question}\n"
         f"判定類別：{category_label}\n\n"
@@ -78,6 +85,8 @@ def generate_llm_answer(
     sources: list[str],
     full_knowledge: str = "",
     conversation: list[dict] | None = None,
+    feedback_context: str = "",
+    memory_context: str = "",
 ) -> str | None:
     if not llm_enabled() or not full_knowledge.strip():
         return None
@@ -102,6 +111,8 @@ def generate_llm_answer(
                 sources=sources,
                 full_knowledge=full_knowledge,
                 conversation=conversation,
+                feedback_context=feedback_context,
+                memory_context=memory_context,
             ),
         )
         text = response.output_text.strip()

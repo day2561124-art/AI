@@ -6,10 +6,9 @@ export function RecordList({ rows, emptyText }) {
         <div className="record-item" key={row.id}>
           <strong>{row.question || row.category_label || row.id}</strong>
           <small>{row.created_at}</small>
-          <p>{row.comment || row.category_label || row.notice || ""}</p>
+          <p>{row.comment || row.answer_mode || row.category_label || row.notice || ""}</p>
         </div>
       ))}
     </div>
   );
 }
-
